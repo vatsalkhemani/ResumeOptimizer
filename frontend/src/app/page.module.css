@@ -1,0 +1,325 @@
+.uploadContainer {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  padding: var(--space-2xl);
+}
+
+.header {
+  text-align: center;
+  margin-bottom: var(--space-2xl);
+  animation: slideUp var(--transition-slow);
+}
+
+.title {
+  font-size: 2.75rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: var(--space-md);
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.mainContent {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-xl);
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.uploadSection,
+.jobDescriptionSection {
+  animation: slideUp var(--transition-slow);
+  animation-fill-mode: both;
+}
+
+.uploadSection {
+  animation-delay: 100ms;
+}
+
+.jobDescriptionSection {
+  animation-delay: 200ms;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-md);
+}
+
+.sectionTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.sectionBadge {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: var(--bg-tertiary);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.dropzone {
+  background: var(--bg-card);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2xl);
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.dropzone:hover,
+.dropzoneActive {
+  border-color: var(--accent-primary);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.dropzoneActive {
+  transform: scale(1.02);
+}
+
+.uploadIcon {
+  width: 64px;
+  height: 64px;
+  background: var(--accent-primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-lg);
+  transition: transform var(--transition-normal);
+}
+
+.dropzone:hover .uploadIcon {
+  transform: scale(1.1);
+}
+
+.uploadIconSvg {
+  width: 28px;
+  height: 28px;
+  color: white;
+}
+
+.dropzoneText {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.dropzoneSubtext {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-bottom: var(--space-lg);
+}
+
+.fileTypes {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.fileType {
+  font-size: 0.75rem;
+  padding: 4px 12px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+}
+
+.fileUploaded {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid var(--accent-success);
+  border-radius: var(--radius-md);
+}
+
+.fileIcon {
+  width: 40px;
+  height: 40px;
+  background: var(--accent-success);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.fileInfo {
+  flex: 1;
+}
+
+.fileName {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.fileSize {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.removeFile {
+  padding: var(--space-sm);
+  color: var(--text-muted);
+  transition: color var(--transition-fast);
+}
+
+.removeFile:hover {
+  color: var(--accent-danger);
+}
+
+.jobDescriptionInput {
+  width: 100%;
+  min-height: 280px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  font-size: 0.95rem;
+  resize: vertical;
+  transition: border-color var(--transition-fast);
+}
+
+.jobDescriptionInput:focus {
+  border-color: var(--accent-primary);
+  outline: none;
+}
+
+.jobDescriptionInput::placeholder {
+  color: var(--text-muted);
+}
+
+.charCount {
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: var(--space-sm);
+}
+
+.footer {
+  max-width: 1100px;
+  margin: var(--space-2xl) auto 0;
+  animation: slideUp var(--transition-slow);
+  animation-delay: 300ms;
+  animation-fill-mode: both;
+}
+
+.securityNote {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-bottom: var(--space-lg);
+}
+
+.lockIcon {
+  color: var(--accent-success);
+}
+
+.analyzeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  width: 100%;
+  max-width: 300px;
+  margin: 0 auto;
+  padding: var(--space-md) var(--space-xl);
+  background: linear-gradient(135deg, var(--accent-primary) 0%, #2563eb 100%);
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-normal);
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+}
+
+.analyzeButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+}
+
+.analyzeButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.arrowIcon {
+  transition: transform var(--transition-fast);
+}
+
+.analyzeButton:hover:not(:disabled) .arrowIcon {
+  transform: translateX(4px);
+}
+
+/* Error state */
+.errorBanner {
+  max-width: 1100px;
+  margin: var(--space-lg) auto;
+  padding: var(--space-md);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid var(--accent-danger);
+  border-radius: var(--radius-md);
+  color: var(--accent-danger);
+  text-align: center;
+}
+
+/* Loading state */
+.loadingOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 15, 26, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.loadingText {
+  margin-top: var(--space-lg);
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .mainContent {
+    grid-template-columns: 1fr;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .dropzone {
+    min-height: 200px;
+    padding: var(--space-lg);
+  }
+
+  .jobDescriptionInput {
+    min-height: 200px;
+  }
+}

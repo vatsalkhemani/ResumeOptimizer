@@ -1,0 +1,417 @@
+.editorContainer {
+    display: flex;
+    height: 100vh;
+    background: var(--bg-primary);
+    overflow: hidden;
+}
+
+/* Left panel - PDF Preview */
+.previewPanel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+}
+
+.previewHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md) var(--space-lg);
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.previewTitle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.autoSaved {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: 0.8rem;
+    color: var(--accent-success);
+}
+
+.previewControls {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.zoomControls {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    padding: var(--space-xs);
+}
+
+.zoomBtn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
+}
+
+.zoomBtn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.zoomLevel {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    min-width: 40px;
+    text-align: center;
+}
+
+.previewContent {
+    flex: 1;
+    overflow: auto;
+    padding: var(--space-lg);
+    display: flex;
+    justify-content: center;
+}
+
+.pdfContainer {
+    background: white;
+    box-shadow: var(--shadow-xl);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    max-width: 100%;
+}
+
+.pdfPage {
+    display: block;
+}
+
+.noPdfMessage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-muted);
+    text-align: center;
+    padding: var(--space-xl);
+}
+
+.noPdfIcon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: var(--space-lg);
+    opacity: 0.5;
+}
+
+/* Right panel - Sidebar */
+.sidebarPanel {
+    width: 400px;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-primary);
+}
+
+.sidebarHeader {
+    padding: var(--space-lg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebarTabs {
+    display: flex;
+    gap: var(--space-sm);
+}
+
+.sidebarTab {
+    padding: var(--space-sm) var(--space-md);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+}
+
+.sidebarTab:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+}
+
+.sidebarTabActive {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+}
+
+.sidebarContent {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-lg);
+}
+
+/* Resume Editor Styles */
+.resumeEditor {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+.editorSection {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.sectionHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md);
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sectionTitle {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.sectionContent {
+    padding: var(--space-md);
+}
+
+/* Metadata editor */
+.metadataGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+}
+
+.metadataField {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.metadataFieldFull {
+    grid-column: 1 / -1;
+}
+
+.fieldLabel {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.fieldInput {
+    padding: var(--space-sm);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    transition: border-color var(--transition-fast);
+}
+
+.fieldInput:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+}
+
+/* Experience/Education items */
+.itemCard {
+    padding: var(--space-md);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.itemCard:last-child {
+    border-bottom: none;
+}
+
+.itemHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-sm);
+}
+
+.itemTitle {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.itemSubtitle {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.itemDate {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-align: right;
+}
+
+.bulletList {
+    margin-top: var(--space-sm);
+    padding-left: var(--space-lg);
+}
+
+.bulletItem {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-xs);
+    position: relative;
+}
+
+.bulletInput {
+    width: 100%;
+    padding: var(--space-xs) var(--space-sm);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
+}
+
+.bulletInput:hover {
+    background: var(--bg-tertiary);
+}
+
+.bulletInput:focus {
+    background: var(--bg-tertiary);
+    border-color: var(--accent-primary);
+    outline: none;
+}
+
+/* Skills */
+.skillCategory {
+    margin-bottom: var(--space-md);
+}
+
+.skillCategory:last-child {
+    margin-bottom: 0;
+}
+
+.skillCategoryName {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-xs);
+}
+
+.skillTags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+}
+
+.skillTag {
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+}
+
+/* Footer actions */
+.sidebarFooter {
+    padding: var(--space-lg);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    gap: var(--space-sm);
+}
+
+.exportBtn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    background: var(--accent-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+}
+
+.exportBtn:hover {
+    background: var(--accent-secondary);
+}
+
+.secondaryBtn {
+    padding: var(--space-md);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+}
+
+.secondaryBtn:hover {
+    background: var(--bg-hover);
+}
+
+/* Empty state */
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    color: var(--text-muted);
+    padding: var(--space-xl);
+}
+
+.emptyStateIcon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: var(--space-md);
+    opacity: 0.5;
+}
+
+.backLink {
+    margin-top: var(--space-md);
+    color: var(--accent-primary);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .sidebarPanel {
+        width: 350px;
+    }
+}
+
+@media (max-width: 768px) {
+    .editorContainer {
+        flex-direction: column;
+    }
+
+    .previewPanel {
+        height: 50vh;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .sidebarPanel {
+        width: 100%;
+        height: 50vh;
+    }
+}

@@ -1,0 +1,186 @@
+/**
+ * Resume Optimizer - TypeScript Types
+ * Matches the backend Pydantic models
+ */
+
+// Section Types
+export type SectionType =
+    | 'summary'
+    | 'experience'
+    | 'education'
+    | 'skills'
+    | 'projects'
+    | 'certifications'
+    | 'languages'
+    | 'custom';
+
+// Bullet point
+export interface Bullet {
+    id: string;
+    text: string;
+    order: number;
+}
+
+// Skill category
+export interface SkillCategory {
+    name: string;
+    skills: string[];
+}
+
+// Experience item
+export interface ExperienceItem {
+    type: 'experience';
+    company: string;
+    role: string;
+    location?: string;
+    start_date: string;
+    end_date?: string | null; // null means "Present"
+    bullets: Bullet[];
+}
+
+// Education item
+export interface EducationItem {
+    type: 'education';
+    institution: string;
+    degree: string;
+    field?: string;
+    location?: string;
+    start_date?: string;
+    end_date: string;
+    gpa?: string;
+    bullets: Bullet[];
+}
+
+// Skills item
+export interface SkillsItem {
+    type: 'skills';
+    categories: SkillCategory[];
+}
+
+// Summary item
+export interface SummaryItem {
+    type: 'summary';
+    text: string;
+}
+
+// Project item
+export interface ProjectItem {
+    type: 'project';
+    name: string;
+    description?: string;
+    technologies?: string[];
+    url?: string;
+    bullets: Bullet[];
+}
+
+// Custom item
+export interface CustomItem {
+    type: 'custom';
+    title?: string;
+    subtitle?: string;
+    date_range?: string;
+    location?: string;
+    bullets: Bullet[];
+}
+
+// Union type for all item content types
+export type ItemContent =
+    | ExperienceItem
+    | EducationItem
+    | SkillsItem
+    | SummaryItem
+    | ProjectItem
+    | CustomItem;
+
+// Section item wrapper
+export interface SectionItem {
+    id: string;
+    order: number;
+    content: ItemContent;
+}
+
+// Resume section
+export interface ResumeSection {
+    id: string;
+    type: SectionType;
+    title: string;
+    order: number;
+    items: SectionItem[];
+}
+
+// Resume metadata (contact info)
+export interface ResumeMetadata {
+    name: string;
+    location?: string;
+    email?: string;
+    phone?: string;
+    linkedin?: string;
+    website?: string;
+    github?: string;
+}
+
+// Complete Resume
+export interface Resume {
+    id: string;
+    metadata: ResumeMetadata;
+    sections: ResumeSection[];
+    version: number;
+    created_at: string;
+    updated_at: string;
+}
+
+// API Response types
+export interface ParseResponse {
+    resume: Resume;
+    warnings: string[];
+}
+
+export interface RenderResponse {
+    latex: string;
+    pdf_base64: string;
+}
+
+// Suggestion types (for Phase 2)
+export type SuggestionCategory = 'critical' | 'stylistic' | 'formatting' | 'missing_keyword';
+
+export type SuggestionType =
+    | 'rewrite_bullet'
+    | 'add_keyword'
+    | 'remove_content'
+    | 'reorder_section'
+    | 'add_section'
+    | 'strengthen_verb'
+    | 'fix_formatting'
+    | 'quantify_impact';
+
+export interface Suggestion {
+    id: string;
+    category: SuggestionCategory;
+    type: SuggestionType;
+    targetPath: string;
+    title: string;
+    description: string;
+    originalValue?: string;
+    suggestedValue?: string;
+    status: 'pending' | 'accepted' | 'dismissed';
+    priority: number;
+}
+
+// Job Description (for Phase 2)
+export interface Keyword {
+    term: string;
+    frequency: number;
+    category: 'skill' | 'methodology' | 'tool' | 'soft_skill';
+    foundInResume: boolean;
+}
+
+export interface JobDescription {
+    id: string;
+    rawText: string;
+    title?: string;
+    company?: string;
+    extractedKeywords: Keyword[];
+    requiredSkills: string[];
+    preferredSkills: string[];
+    responsibilities: string[];
+}
