@@ -1,7 +1,12 @@
 /**
  * API Client for Resume Optimizer backend
+ * 
+ * Architecture:
+ * - Parse: Upload file → get Resume model
+ * - Export PDF: Send Resume model → get PDF blob (for download)
+ * - Preview: Rendered directly in frontend (no API call needed)
  */
-import { Resume, ParseResponse, RenderResponse } from './types';
+import { Resume, ParseResponse } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -14,6 +19,7 @@ class ApiClient {
 
     /**
      * Parse a resume file (PDF or DOCX)
+     * Returns the structured Resume model
      */
     async parseResume(file: File): Promise<ParseResponse> {
         const formData = new FormData();
@@ -33,10 +39,11 @@ class ApiClient {
     }
 
     /**
-     * Render resume to LaTeX and compile to PDF
+     * Export resume to PDF
+     * Returns the PDF as a Blob for download
      */
-    async renderResume(resume: Resume): Promise<RenderResponse> {
-        const response = await fetch(`${this.baseUrl}/api/render`, {
+    async exportPdf(resume: Resume): Promise<Blob> {
+        const response = await fetch(`${this.baseUrl}/api/render/pdf`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -46,30 +53,10 @@ class ApiClient {
 
         if (!response.ok) {
             const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-            throw new Error(error.detail || 'Failed to render resume');
+            throw new Error(error.detail || 'Failed to generate PDF');
         }
 
-        return response.json();
-    }
-
-    /**
-     * Get LaTeX source only (without PDF compilation)
-     */
-    async getLatexSource(resume: Resume): Promise<{ latex: string }> {
-        const response = await fetch(`${this.baseUrl}/api/render/latex`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ resume }),
-        });
-
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-            throw new Error(error.detail || 'Failed to get LaTeX source');
-        }
-
-        return response.json();
+        return response.blob();
     }
 
     /**

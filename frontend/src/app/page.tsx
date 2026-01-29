@@ -92,16 +92,7 @@ export default function UploadPage() {
       // Step 2: Store the resume in state
       setResume(parseResponse.resume);
 
-      // Step 3: Render to PDF
-      try {
-        const renderResponse = await api.renderResume(parseResponse.resume);
-        setPdf(renderResponse.pdf_base64, renderResponse.latex);
-      } catch (renderError) {
-        console.log('PDF rendering skipped (LaTeX may not be installed)');
-        setPdf('', '');
-      }
-
-      // Step 4: Navigate to editor
+      // Step 3: Navigate to editor (preview renders directly from state)
       router.push('/editor');
 
     } catch (err) {

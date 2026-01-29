@@ -1,54 +1,36 @@
 """
-Render Router - Handles LaTeX rendering and PDF compilation
+Render Router - Handles PDF generation for export
+Uses ReportLab for PDF - pure Python, no external installations required
 """
 from fastapi import APIRouter, HTTPException
-from app.services.latex_renderer import LaTeXRenderer
-from app.models.resume import RenderRequest, RenderResponse
+from fastapi.responses import Response
+from pydantic import BaseModel
+from app.services.pdf_renderer import PDFRenderer
+from app.models.resume import Resume
 
 router = APIRouter()
-renderer = LaTeXRenderer()
+renderer = PDFRenderer()
 
 
-@router.post("/render", response_model=RenderResponse)
-async def render_resume(request: RenderRequest):
+class RenderRequest(BaseModel):
+    resume: Resume
+
+
+@router.post("/render/pdf")
+async def render_pdf(request: RenderRequest):
     """
-    Render a resume to LaTeX and compile to PDF.
-    Returns both the LaTeX source and base64-encoded PDF.
-    """
-    try:
-        latex, pdf_base64 = renderer.render_and_compile(request.resume)
-        
-        if not pdf_base64:
-            # If PDF compilation failed, still return LaTeX
-            return RenderResponse(
-                latex=latex,
-                pdf_base64=""
-            )
-        
-        return RenderResponse(
-            latex=latex,
-            pdf_base64=pdf_base64
-        )
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error rendering resume: {str(e)}"
-        )
-
-
-@router.post("/render/latex")
-async def render_latex_only(request: RenderRequest):
-    """
-    Render a resume to LaTeX source only (without PDF compilation).
-    Useful for preview or when LaTeX is not installed.
+    Generate PDF from resume for download.
+    Returns the PDF as binary content.
     """
     try:
-        latex = renderer.render(request.resume)
-        return {"latex": latex}
+        pdf_bytes = renderer.render_pdf(request.resume)
         
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error rendering LaTeX: {str(e)}"
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename=resume.pdf"
+            }
         )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating PDF: {str(e)}")

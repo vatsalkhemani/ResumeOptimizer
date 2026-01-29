@@ -13,7 +13,7 @@ interface DocumentState {
 
     // PDF state
     pdfBase64: string | null;
-    latexSource: string | null;
+    htmlSource: string | null;
 
     // UI state
     isLoading: boolean;
@@ -26,7 +26,7 @@ interface DocumentState {
 
     // Actions
     setResume: (resume: Resume) => void;
-    setPdf: (pdfBase64: string, latex: string) => void;
+    setPdf: (pdfBase64: string, html: string) => void;
     setLoading: (isLoading: boolean) => void;
     setError: (error: string | null) => void;
     setJobDescription: (jd: JobDescription | null) => void;
@@ -57,7 +57,7 @@ const initialState = {
     suggestions: [],
     jobDescription: null,
     pdfBase64: null,
-    latexSource: null,
+    htmlSource: null,
     isLoading: false,
     error: null,
     selectedSuggestionId: null,
@@ -77,7 +77,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
         });
     },
 
-    setPdf: (pdfBase64, latex) => set({ pdfBase64, latexSource: latex }),
+    setPdf: (pdfBase64, html) => set({ pdfBase64, htmlSource: html }),
 
     setLoading: (isLoading) => set({ isLoading }),
 
