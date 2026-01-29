@@ -1,0 +1,66 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.so
+.eggs/
+*.egg-info/
+*.egg
+
+# Environment variables - NEVER COMMIT THESE
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
+frontend/.env
+frontend/.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+*.log
+
+# Python virtual environments
+venv/
+env/
+.venv/
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+
+# Compiled PDFs (we generate these, don't commit)
+backend/temp/
+*.pdf
+
+# Test coverage
+coverage/
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Misc
+*.bak
+*.tmp
