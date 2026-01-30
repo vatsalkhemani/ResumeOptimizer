@@ -5,10 +5,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-from app.routers import parse, render, analyze
-
-# Load environment variables
+# Load environment variables first
 load_dotenv()
+
+from app.routers import parse, render, analyze
 
 app = FastAPI(
     title="Resume Optimizer API",

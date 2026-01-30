@@ -2,7 +2,7 @@
 Parse Router - Handles resume file upload and parsing
 """
 from fastapi import APIRouter, UploadFile, File, HTTPException
-from app.services.parser import ResumeParser
+from app.services.resume_parser import ResumeParser
 from app.models.resume import ParseResponse
 
 router = APIRouter()

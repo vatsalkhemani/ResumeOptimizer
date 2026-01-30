@@ -140,30 +140,34 @@ export interface RenderResponse {
     pdf_base64: string;
 }
 
-// Suggestion types (for Phase 2)
-export type SuggestionCategory = 'critical' | 'stylistic' | 'formatting' | 'missing_keyword';
-
-export type SuggestionType =
-    | 'rewrite_bullet'
-    | 'add_keyword'
-    | 'remove_content'
-    | 'reorder_section'
-    | 'add_section'
-    | 'strengthen_verb'
-    | 'fix_formatting'
-    | 'quantify_impact';
+// Analysis Types
+export type SuggestionType = 'critical' | 'stylistic' | 'formatting' | 'content';
+export type SuggestionAction = 'rewrite' | 'add' | 'delete' | 'format';
 
 export interface Suggestion {
     id: string;
-    category: SuggestionCategory;
     type: SuggestionType;
-    targetPath: string;
+    action: SuggestionAction;
+    section_id?: string;
+    item_id?: string;
+    bullet_id?: string;
+    field?: string;
     title: string;
     description: string;
-    originalValue?: string;
-    suggestedValue?: string;
-    status: 'pending' | 'accepted' | 'dismissed';
-    priority: number;
+    current_text?: string;
+    suggested_text?: string;
+    impact: string; // 'High' | 'Medium' | 'Low'
+    score_impact: number;
+
+    // UI State (Frontend only)
+    isAccepted?: boolean;
+    isDismissed?: boolean;
+}
+
+export interface AnalysisResult {
+    score: number;
+    summary: string;
+    suggestions: Suggestion[];
 }
 
 // Job Description (for Phase 2)

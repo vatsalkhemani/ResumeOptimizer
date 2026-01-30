@@ -1,6 +1,5 @@
 """
 Resume Parser Service - Extracts structured data from PDF and DOCX files using OpenAI GPT-4o
-Ensures 100% accuracy by using LLM to interpret layout and content.
 """
 import fitz  # PyMuPDF
 from docx import Document
@@ -9,15 +8,12 @@ import json
 import uuid
 from typing import Optional
 from openai import OpenAI, AzureOpenAI
-from dotenv import load_dotenv
 
 from app.models.resume import (
     Resume, ResumeMetadata, ResumeSection, SectionItem,
     ExperienceItem, EducationItem, SkillsItem, SummaryItem,
     ProjectItem, CustomItem, Bullet, SkillCategory, SectionType
 )
-
-load_dotenv()
 
 class ResumeParser:
     """Parses PDF and DOCX resumes into structured Resume model using LLM"""
@@ -41,17 +37,17 @@ class ResumeParser:
                     azure_endpoint=self.azure_endpoint
                 )
                 self.is_azure = True
-                print("Initialized Azure OpenAI Client")
+                print("DEBUG: ResumeParser initialized with Azure OpenAI", flush=True)
             except Exception as e:
-                print(f"Error initializing Azure OpenAI client: {e}")
+                print(f"Error initializing Azure OpenAI client: {e}", flush=True)
         elif self.openai_api_key:
             try:
                 self.client = OpenAI(api_key=self.openai_api_key)
-                print("Initialized Standard OpenAI Client")
+                print("DEBUG: ResumeParser initialized with Standard OpenAI", flush=True)
             except Exception as e:
-                print(f"Error initializing OpenAI client: {e}")
+                print(f"Error initializing OpenAI client: {e}", flush=True)
         else:
-            print("WARNING: No valid API Key found (Azure or OpenAI). AI parsing will not work.")
+            print("WARNING: No valid API Key found (Azure or OpenAI). AI parsing will not work.", flush=True)
 
     def parse_pdf(self, file_bytes: bytes) -> tuple[Resume, list[str]]:
         """Parse PDF file and return Resume model with warnings"""
@@ -62,9 +58,17 @@ class ResumeParser:
                 full_text += page.get_text() + "\n"
             doc.close()
             
+            print(f"DEBUG: Extracted PDF text length: {len(full_text)}", flush=True)
+            if len(full_text.strip()) < 20:
+                raise Exception("PDF appears empty or scanned (No text found).")
+            
             return self._parse_with_llm(full_text)
         except Exception as e:
-            return self._create_empty_resume(), [f"PDF parsing error: {str(e)}"]
+            print(f"PDF Error: {e}", flush=True)
+            # Use explicit error creation
+            empty = self._create_empty_resume()
+            empty.metadata.name = f"ERROR: {str(e)[:50]}"
+            return empty, [f"PDF parsing error: {str(e)}"]
 
     def parse_docx(self, file_bytes: bytes) -> tuple[Resume, list[str]]:
         """Parse DOCX file and return Resume model with warnings"""
@@ -72,6 +76,7 @@ class ResumeParser:
             from io import BytesIO
             doc = Document(BytesIO(file_bytes))
             full_text = "\n".join([para.text for para in doc.paragraphs])
+            print(f"DEBUG: Extracted DOCX text length: {len(full_text)}", flush=True)
             return self._parse_with_llm(full_text)
         except Exception as e:
             return self._create_empty_resume(), [f"DOCX parsing error: {str(e)}"]
@@ -79,7 +84,10 @@ class ResumeParser:
     def _parse_with_llm(self, text: str) -> tuple[Resume, list[str]]:
         """Send text to LLM and parse response"""
         if not self.client:
-            return self._create_empty_resume(), ["OpenAI API key missing. Using empty template."]
+            print("DEBUG: No Client in _parse_with_llm", flush=True)
+            empty = self._create_empty_resume()
+            empty.metadata.name = "ERROR: AI Client Not Configured"
+            return empty, ["OpenAI API key missing. Using empty template."]
 
         system_prompt = """
         You are an expert Resume Parser. Your job is to convert raw resume text into a structured JSON strictly adhering to the schema below.
@@ -154,6 +162,7 @@ class ResumeParser:
 
         try:
             model_name = self.azure_deployment if self.is_azure else "gpt-4o"
+            print(f"DEBUG: Calling LLM (Model: {model_name})...", flush=True)
             
             response = self.client.chat.completions.create(
                 model=model_name,
@@ -166,13 +175,17 @@ class ResumeParser:
             )
             
             content = response.choices[0].message.content
+            print(f"DEBUG: LLM Response Content: {content[:200]}...", flush=True)
+            
             data = json.loads(content)
             
             return self._convert_to_model(data), []
             
         except Exception as e:
-            print(f"LLM Parsing Error: {e}")
-            return self._create_empty_resume(), [f"AI Parsing failed: {str(e)}"]
+            print(f"LLM Parsing Error: {e}", flush=True)
+            empty = self._create_empty_resume()
+            empty.metadata.name = f"ERROR: {str(e)[:50]}"
+            return empty, [f"AI Parsing failed: {str(e)}"]
 
     def _convert_to_model(self, data: dict) -> Resume:
         """Convert LLM JSON output to internal Pydantic models"""

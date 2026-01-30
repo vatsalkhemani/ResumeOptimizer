@@ -1,0 +1,33 @@
+Traceback (most recent call last):
+  File "C:\Users\vkhemani\Pictures\Vibecoding\ResumeOptimizer\backend\debug.py", line 3, in <module>
+    from app.main import app
+  File "C:\Users\vkhemani\Pictures\Vibecoding\ResumeOptimizer\backend\app\main.py", line 8, in <module>
+    from app.routers import parse, render, analyze
+  File "C:\Users\vkhemani\Pictures\Vibecoding\ResumeOptimizer\backend\app\routers\analyze.py", line 8, in <module>
+    from app.services.analysis import AnalysisService
+  File "C:\Users\vkhemani\Pictures\Vibecoding\ResumeOptimizer\backend\app\services\analysis.py", line 13, in <module>
+    load_dotenv()
+  File "C:\Users\vkhemani\AppData\Local\Programs\Python\Python311\Lib\site-packages\dotenv\main.py", line 346, in load_dotenv
+    return dotenv.set_as_environment_variables()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\vkhemani\AppData\Local\Programs\Python\Python311\Lib\site-packages\dotenv\main.py", line 91, in set_as_environment_variables
+    if not self.dict():
+           ^^^^^^^^^^^
+  File "C:\Users\vkhemani\AppData\Local\Programs\Python\Python311\Lib\site-packages\dotenv\main.py", line 75, in dict
+    self._dict = OrderedDict(resolve_variables(raw_values, override=self.override))
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\vkhemani\AppData\Local\Programs\Python\Python311\Lib\site-packages\dotenv\main.py", line 233, in resolve_variables
+    for (name, value) in values:
+  File "C:\Users\vkhemani\AppData\Local\Programs\Python\Python311\Lib\site-packages\dotenv\main.py", line 83, in parse
+    for mapping in with_warn_for_invalid_lines(parse_stream(stream)):
+  File "C:\Users\vkhemani\AppData\Local\Programs\Python\Python311\Lib\site-packages\dotenv\main.py", line 25, in with_warn_for_invalid_lines
+    for mapping in mappings:
+  File "C:\Users\vkhemani\AppData\Local\Programs\Python\Python311\Lib\site-packages\dotenv\parser.py", line 173, in parse_stream
+    reader = Reader(stream)
+             ^^^^^^^^^^^^^^
+  File "C:\Users\vkhemani\AppData\Local\Programs\Python\Python311\Lib\site-packages\dotenv\parser.py", line 64, in __init__
+    self.string = stream.read()
+                  ^^^^^^^^^^^^^
+  File "<frozen codecs>", line 322, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+WARNING: No valid API Key found (Azure or OpenAI). AI parsing will not work.

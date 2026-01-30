@@ -470,3 +470,21 @@
   color: #fff;
   gap: 16px;
 }
+
+.loadingSuggestion {
+  text-align: center;
+  padding: 24px;
+  color: #a1a1aa;
+  font-size: 13px;
+  font-style: italic;
+  border: 1px dashed #27272a;
+  border-radius: 8px;
+  background: #18191d;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 32px;
+  color: #71717a;
+  font-size: 13px;
+}

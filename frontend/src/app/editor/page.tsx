@@ -10,10 +10,64 @@ import { api } from '@/lib/api';
 
 export default function EditorPage() {
     const router = useRouter();
-    const { resume, updateBullet, updateMetadata } = useDocumentStore();
+    const {
+        resume,
+        suggestions,
+        score,
+        jobDescription,
+        setSuggestions,
+        setScore,
+        updateBullet,
+        updateMetadata,
+        applySuggestion,
+        dismissSuggestion
+    } = useDocumentStore();
+
     const [isExporting, setIsExporting] = useState(false);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [zoom, setZoom] = useState(100);
     const [activeTab, setActiveTab] = useState<'critical' | 'stylistic' | 'formatting'>('critical');
+
+    // Run Analysis on Mount
+    useEffect(() => {
+        if (resume && suggestions.length === 0 && !isAnalyzing) {
+            runAnalysis();
+        }
+    }, [resume]); // Run once when resume is loaded
+
+    const runAnalysis = async () => {
+        if (!resume) return;
+        setIsAnalyzing(true);
+        try {
+            // Default to empty JD string if null
+            const jdText = jobDescription?.rawText || "";
+            const result = await api.analyzeResume(resume, jdText);
+            setScore(result.score);
+            setSuggestions(result.suggestions);
+        } catch (error) {
+            console.error("Analysis failed:", error);
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
+    // Filter suggestions
+    const filteredSuggestions = suggestions.filter(s => {
+        if (s.isDismissed || s.isAccepted) return false; // Hide processed
+        if (activeTab === 'critical') return s.type === 'critical';
+        if (activeTab === 'stylistic') return s.type === 'stylistic';
+        if (activeTab === 'formatting') return s.type === 'formatting' || s.type === 'content';
+        return true;
+    });
+
+    // Suggestion Handlers
+    const handleAccept = (id: string) => {
+        applySuggestion(id);
+    };
+
+    const handleDismiss = (id: string) => {
+        dismissSuggestion(id);
+    };
 
     // Handle zoom
     const handleZoomIn = () => setZoom(prev => Math.min(prev + 10, 200));
@@ -77,7 +131,7 @@ export default function EditorPage() {
                 <div className={styles.actions}>
                     <div className={styles.scoreBadge}>
                         <span className={styles.scoreLabel}>SCORE</span>
-                        <span className={styles.scoreValue}>85%</span>
+                        <span className={styles.scoreValue}>{score}%</span>
                     </div>
                     <button
                         className={styles.exportButton}
@@ -101,7 +155,6 @@ export default function EditorPage() {
                             resume={resume}
                             onBulletEdit={handleBulletEdit}
                             onMetadataEdit={handleMetadataEdit}
-                            editable={true}
                         />
                     </div>
 
@@ -117,19 +170,19 @@ export default function EditorPage() {
                 <aside className={styles.sidebar}>
                     <div className={styles.sidebarHeader}>
                         <h3>AI Copilot</h3>
-                        <span className={styles.suggestionCount}>12 Suggestions</span>
+                        <span className={styles.suggestionCount}>{suggestions.length} Suggestions</span>
                     </div>
 
                     <div className={styles.scoreCard}>
                         <div className={styles.scoreRow}>
                             <span>Optimization Score</span>
-                            <span className={styles.scoreHigh}>85%</span>
+                            <span className={styles.scoreHigh}>{score}%</span>
                         </div>
                         <div className={styles.progressBar}>
-                            <div className={styles.progressFill} style={{ width: '85%' }}></div>
+                            <div className={styles.progressFill} style={{ width: `${score}%` }}></div>
                         </div>
                         <div className={styles.scoreStatus}>
-                            ✓ Great job! Resume is ATS-friendly.
+                            {isAnalyzing ? "Analyzing resume..." : "Analysis complete."}
                         </div>
                     </div>
 
@@ -138,52 +191,63 @@ export default function EditorPage() {
                             className={activeTab === 'critical' ? styles.activeTab : styles.tab}
                             onClick={() => setActiveTab('critical')}
                         >
-                            Critical (3)
+                            Critical ({suggestions.filter(s => s.type === 'critical').length})
                         </button>
                         <button
                             className={activeTab === 'stylistic' ? styles.activeTab : styles.tab}
                             onClick={() => setActiveTab('stylistic')}
                         >
-                            Stylistic (5)
+                            Stylistic ({suggestions.filter(s => s.type === 'stylistic').length})
                         </button>
                         <button
                             className={activeTab === 'formatting' ? styles.activeTab : styles.tab}
                             onClick={() => setActiveTab('formatting')}
                         >
-                            Formatting (4)
+                            Formatting
                         </button>
                     </div>
 
                     <div className={styles.suggestionList}>
-                        {/* Mock Suggestion Card */}
-                        <div className={styles.suggestionCard}>
-                            <div className={styles.cardHeader}>
-                                <span className={styles.impactTag}>⚡ IMPACT</span>
-                                <span className={styles.sectionTag}>Summary</span>
-                            </div>
-                            <h4>Strengthen Action Verbs</h4>
-                            <p>Replace passive language with strong action verbs to emphasize your leadership role.</p>
+                        {isAnalyzing && <div className={styles.loadingSuggestion}>Analyzing...</div>}
 
-                            <div className={styles.diffBox}>
-                                <div className={styles.diffOld}>...track record of managing cross-functional teams...</div>
-                                <div className={styles.diffNew}>...track record of <strong>leading</strong> cross-functional teams...</div>
-                            </div>
+                        {!isAnalyzing && filteredSuggestions.length === 0 && (
+                            <div className={styles.emptyState}>No suggestions in this category.</div>
+                        )}
 
-                            <div className={styles.cardActions}>
-                                <button className={styles.acceptButton}>✓ Accept</button>
-                                <button className={styles.dismissButton}>✕ Dismiss</button>
-                            </div>
-                        </div>
+                        {filteredSuggestions.map(suggestion => (
+                            <div key={suggestion.id} className={styles.suggestionCard}>
+                                <div className={styles.cardHeader}>
+                                    <span className={styles.impactTag}>
+                                        {suggestion.score_impact > 0 && `+${suggestion.score_impact} PTS`}
+                                    </span>
+                                    <span className={styles.sectionTag}>{suggestion.action}</span>
+                                </div>
+                                <h4>{suggestion.title}</h4>
+                                <p>{suggestion.description}</p>
 
-                        <div className={styles.suggestionCard}>
-                            <div className={styles.cardHeader}>
-                                <span className={styles.missingTag}>❗ MISSING KEYWORD</span>
-                                <span className={styles.sectionTag}>Skills</span>
+                                {(suggestion.current_text && suggestion.suggested_text) && (
+                                    <div className={styles.diffBox}>
+                                        <div className={styles.diffOld}>{suggestion.current_text}</div>
+                                        <div className={styles.diffNew}>{suggestion.suggested_text}</div>
+                                    </div>
+                                )}
+
+                                <div className={styles.cardActions}>
+                                    <button
+                                        className={styles.acceptButton}
+                                        onClick={() => handleAccept(suggestion.id)}
+                                    >
+                                        ✓ Accept
+                                    </button>
+                                    <button
+                                        className={styles.dismissButton}
+                                        onClick={() => handleDismiss(suggestion.id)}
+                                    >
+                                        ✕ Dismiss
+                                    </button>
+                                </div>
                             </div>
-                            <h4>Add "Product Strategy"</h4>
-                            <p>This keyword appears in 80% of job descriptions for this role but is missing/hidden.</p>
-                            <button className={styles.addButton}>Add to Skills</button>
-                        </div>
+                        ))}
                     </div>
 
                     {/* Chat / Prompt Input */}

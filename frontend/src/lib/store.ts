@@ -15,6 +15,9 @@ interface DocumentState {
     pdfBase64: string | null;
     htmlSource: string | null;
 
+    // AI Metrics
+    score: number;
+
     // UI state
     isLoading: boolean;
     error: string | null;
@@ -31,6 +34,7 @@ interface DocumentState {
     setError: (error: string | null) => void;
     setJobDescription: (jd: JobDescription | null) => void;
     setSuggestions: (suggestions: Suggestion[]) => void;
+    setScore: (score: number) => void;
     setSelectedSuggestion: (id: string | null) => void;
 
     // Resume mutations
@@ -54,6 +58,7 @@ interface DocumentState {
 
 const initialState = {
     resume: null,
+    score: 0,
     suggestions: [],
     jobDescription: null,
     pdfBase64: null,
@@ -86,6 +91,8 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     setJobDescription: (jd) => set({ jobDescription: jd }),
 
     setSuggestions: (suggestions) => set({ suggestions }),
+
+    setScore: (score) => set({ score }),
 
     setSelectedSuggestion: (id) => set({ selectedSuggestionId: id }),
 
@@ -205,10 +212,20 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     },
 
     applySuggestion: (suggestionId) => {
-        // TODO: Implement in Phase 2
+        const { suggestions, updateBullet } = get();
+        const suggestion = suggestions.find(s => s.id === suggestionId);
+
+        if (!suggestion) return;
+
+        // Handle Bullet Rewrite
+        if (suggestion.section_id && suggestion.item_id && suggestion.bullet_id && suggestion.suggested_text) {
+            updateBullet(suggestion.section_id, suggestion.item_id, suggestion.bullet_id, suggestion.suggested_text);
+        }
+
+        // Mark as accepted locally
         set({
-            suggestions: get().suggestions.map(s =>
-                s.id === suggestionId ? { ...s, status: 'accepted' as const } : s
+            suggestions: suggestions.map(s =>
+                s.id === suggestionId ? { ...s, isAccepted: true } : s
             ),
         });
     },

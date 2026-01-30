@@ -6,7 +6,7 @@
  * - Export PDF: Send Resume model → get PDF blob (for download)
  * - Preview: Rendered directly in frontend (no API call needed)
  */
-import { Resume, ParseResponse } from './types';
+import { Resume, ParseResponse, AnalysisResult } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -33,6 +33,30 @@ class ApiClient {
         if (!response.ok) {
             const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
             throw new Error(error.detail || 'Failed to parse resume');
+        }
+
+        return response.json();
+    }
+
+    /**
+     * Analyze resume against job description
+     * Returns suggestions and score
+     */
+    async analyzeResume(resume: Resume, jobDescription: string): Promise<AnalysisResult> {
+        const response = await fetch(`${this.baseUrl}/api/analyze`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                resume,
+                job_description: jobDescription
+            }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+            throw new Error(error.detail || 'Failed to analyze resume');
         }
 
         return response.json();
