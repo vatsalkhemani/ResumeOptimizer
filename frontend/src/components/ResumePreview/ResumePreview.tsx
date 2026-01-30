@@ -24,13 +24,17 @@ interface ResumePreviewProps {
     onBulletEdit?: (sectionId: string, itemId: string, bulletId: string, newText: string) => void;
     onMetadataEdit?: (field: keyof ResumeMetadata, value: string) => void;
     editable?: boolean;
+    highlightedBulletId?: string | null;
+    highlightedItemId?: string | null;
 }
 
 export default function ResumePreview({
     resume,
     onBulletEdit,
     onMetadataEdit,
-    editable = true
+    editable = true,
+    highlightedBulletId = null,
+    highlightedItemId = null
 }: ResumePreviewProps) {
     return (
         <div className={styles.resume}>
@@ -44,6 +48,8 @@ export default function ResumePreview({
                             section={section}
                             onBulletEdit={onBulletEdit}
                             editable={editable}
+                            highlightedBulletId={highlightedBulletId}
+                            highlightedItemId={highlightedItemId}
                         />
                     ))}
             </div>
@@ -100,9 +106,11 @@ interface SectionProps {
     section: ResumeSection;
     onBulletEdit?: (sectionId: string, itemId: string, bulletId: string, newText: string) => void;
     editable: boolean;
+    highlightedBulletId?: string | null;
+    highlightedItemId?: string | null;
 }
 
-function Section({ section, onBulletEdit, editable }: SectionProps) {
+function Section({ section, onBulletEdit, editable, highlightedBulletId, highlightedItemId }: SectionProps) {
     return (
         <section className={styles.section}>
             <h2 className={styles.sectionTitle}>{section.title}</h2>
@@ -116,6 +124,8 @@ function Section({ section, onBulletEdit, editable }: SectionProps) {
                             sectionId={section.id}
                             onBulletEdit={onBulletEdit}
                             editable={editable}
+                            highlightedBulletId={highlightedBulletId}
+                            highlightedItemId={highlightedItemId}
                         />
                     ))}
             </div>
@@ -129,27 +139,36 @@ interface SectionItemRendererProps {
     sectionId: string;
     onBulletEdit?: (sectionId: string, itemId: string, bulletId: string, newText: string) => void;
     editable: boolean;
+    highlightedBulletId?: string | null;
+    highlightedItemId?: string | null;
 }
 
-function SectionItemRenderer({ item, sectionId, onBulletEdit, editable }: SectionItemRendererProps) {
+function SectionItemRenderer({ item, sectionId, onBulletEdit, editable, highlightedBulletId, highlightedItemId }: SectionItemRendererProps) {
     const content = item.content;
+    const isItemHighlighted = highlightedItemId === item.id;
 
-    switch (content.type) {
-        case 'experience':
-            return <ExperienceEntry content={content} itemId={item.id} sectionId={sectionId} onBulletEdit={onBulletEdit} editable={editable} />;
-        case 'education':
-            return <EducationEntry content={content} itemId={item.id} />;
-        case 'skills':
-            return <SkillsEntry content={content} />;
-        case 'summary':
-            return <SummaryEntry content={content} />;
-        case 'project':
-            return <ProjectEntry content={content} itemId={item.id} sectionId={sectionId} onBulletEdit={onBulletEdit} editable={editable} />;
-        case 'custom':
-            return <CustomEntry content={content} itemId={item.id} sectionId={sectionId} onBulletEdit={onBulletEdit} editable={editable} />;
-        default:
-            return null;
-    }
+    const wrapperClass = isItemHighlighted ? styles.highlightedItem : '';
+
+    const renderContent = () => {
+        switch (content.type) {
+            case 'experience':
+                return <ExperienceEntry content={content} itemId={item.id} sectionId={sectionId} onBulletEdit={onBulletEdit} editable={editable} highlightedBulletId={highlightedBulletId} />;
+            case 'education':
+                return <EducationEntry content={content} itemId={item.id} />;
+            case 'skills':
+                return <SkillsEntry content={content} />;
+            case 'summary':
+                return <SummaryEntry content={content} />;
+            case 'project':
+                return <ProjectEntry content={content} itemId={item.id} sectionId={sectionId} onBulletEdit={onBulletEdit} editable={editable} highlightedBulletId={highlightedBulletId} />;
+            case 'custom':
+                return <CustomEntry content={content} itemId={item.id} sectionId={sectionId} onBulletEdit={onBulletEdit} editable={editable} highlightedBulletId={highlightedBulletId} />;
+            default:
+                return null;
+        }
+    };
+
+    return <div className={wrapperClass}>{renderContent()}</div>;
 }
 
 // Experience Entry - uses snake_case from API (start_date, end_date)
@@ -159,9 +178,10 @@ interface ExperienceEntryProps {
     sectionId: string;
     onBulletEdit?: (sectionId: string, itemId: string, bulletId: string, newText: string) => void;
     editable: boolean;
+    highlightedBulletId?: string | null;
 }
 
-function ExperienceEntry({ content, itemId, sectionId, onBulletEdit, editable }: ExperienceEntryProps) {
+function ExperienceEntry({ content, itemId, sectionId, onBulletEdit, editable, highlightedBulletId }: ExperienceEntryProps) {
     const startDate = content.start_date || '';
     const endDate = content.end_date || 'Present';
     const dateRange = startDate ? `${startDate} — ${endDate}` : endDate;
@@ -182,6 +202,7 @@ function ExperienceEntry({ content, itemId, sectionId, onBulletEdit, editable }:
                 itemId={itemId}
                 onEdit={onBulletEdit}
                 editable={editable}
+                highlightedBulletId={highlightedBulletId}
             />
         </div>
     );
@@ -250,9 +271,10 @@ interface ProjectEntryProps {
     sectionId: string;
     onBulletEdit?: (sectionId: string, itemId: string, bulletId: string, newText: string) => void;
     editable: boolean;
+    highlightedBulletId?: string | null;
 }
 
-function ProjectEntry({ content, itemId, sectionId, onBulletEdit, editable }: ProjectEntryProps) {
+function ProjectEntry({ content, itemId, sectionId, onBulletEdit, editable, highlightedBulletId }: ProjectEntryProps) {
     return (
         <div className={styles.entry}>
             <div className={styles.entryHeader}>
@@ -269,6 +291,7 @@ function ProjectEntry({ content, itemId, sectionId, onBulletEdit, editable }: Pr
                 itemId={itemId}
                 onEdit={onBulletEdit}
                 editable={editable}
+                highlightedBulletId={highlightedBulletId}
             />
         </div>
     );
@@ -281,9 +304,10 @@ interface CustomEntryProps {
     sectionId: string;
     onBulletEdit?: (sectionId: string, itemId: string, bulletId: string, newText: string) => void;
     editable: boolean;
+    highlightedBulletId?: string | null;
 }
 
-function CustomEntry({ content, itemId, sectionId, onBulletEdit, editable }: CustomEntryProps) {
+function CustomEntry({ content, itemId, sectionId, onBulletEdit, editable, highlightedBulletId }: CustomEntryProps) {
     return (
         <div className={styles.entry}>
             {content.title && (
@@ -297,6 +321,7 @@ function CustomEntry({ content, itemId, sectionId, onBulletEdit, editable }: Cus
                 itemId={itemId}
                 onEdit={onBulletEdit}
                 editable={editable}
+                highlightedBulletId={highlightedBulletId}
             />
         </div>
     );
@@ -309,9 +334,10 @@ interface BulletListProps {
     itemId: string;
     onEdit?: (sectionId: string, itemId: string, bulletId: string, newText: string) => void;
     editable: boolean;
+    highlightedBulletId?: string | null;
 }
 
-function BulletList({ bullets, sectionId, itemId, onEdit, editable }: BulletListProps) {
+function BulletList({ bullets, sectionId, itemId, onEdit, editable, highlightedBulletId }: BulletListProps) {
     if (!bullets || bullets.length === 0) return null;
 
     const handleBulletEdit = (bulletId: string) => (e: React.FocusEvent<HTMLLIElement>) => {
@@ -320,21 +346,36 @@ function BulletList({ bullets, sectionId, itemId, onEdit, editable }: BulletList
         }
     };
 
+    // Helper to render markdown bold (**text**) as HTML
+    const renderWithMarkdown = (text: string) => {
+        // Split by **bold** pattern
+        const parts = text.split(/(\*\*[^*]+\*\*)/g);
+        return parts.map((part, i) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+                return <strong key={i}>{part.slice(2, -2)}</strong>;
+            }
+            return part;
+        });
+    };
+
     return (
         <ul className={styles.bulletList}>
             {bullets
                 .sort((a, b) => a.order - b.order)
-                .map(bullet => (
-                    <li
-                        key={bullet.id}
-                        className={styles.bulletItem}
-                        contentEditable={editable}
-                        suppressContentEditableWarning
-                        onBlur={handleBulletEdit(bullet.id)}
-                    >
-                        {bullet.text}
-                    </li>
-                ))}
+                .map(bullet => {
+                    const isHighlighted = highlightedBulletId === bullet.id;
+                    return (
+                        <li
+                            key={bullet.id}
+                            className={`${styles.bulletItem} ${isHighlighted ? styles.highlightedBullet : ''}`}
+                            contentEditable={editable}
+                            suppressContentEditableWarning
+                            onBlur={handleBulletEdit(bullet.id)}
+                        >
+                            {renderWithMarkdown(bullet.text)}
+                        </li>
+                    );
+                })}
         </ul>
     );
 }

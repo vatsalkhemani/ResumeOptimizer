@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import styles from './page.module.css';
@@ -15,35 +15,49 @@ export default function EditorPage() {
         suggestions,
         score,
         jobDescription,
+        activeSuggestionIndex,
         setSuggestions,
         setScore,
         updateBullet,
         updateMetadata,
         applySuggestion,
-        dismissSuggestion
+        dismissSuggestion,
+        nextSuggestion,
+        setActiveSuggestionIndex,
+        reorderSections
     } = useDocumentStore();
 
     const [isExporting, setIsExporting] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [zoom, setZoom] = useState(100);
-    const [activeTab, setActiveTab] = useState<'critical' | 'stylistic' | 'formatting'>('critical');
+    const [customPrompt, setCustomPrompt] = useState('');
+    const [expandedSection, setExpandedSection] = useState<string | null>('experience');
+    const [draggedSectionId, setDraggedSectionId] = useState<string | null>(null);
+
+    // Get active (not processed) suggestions
+    const activeSuggestions = useMemo(() =>
+        suggestions.filter(s => !s.isAccepted && !s.isDismissed),
+        [suggestions]
+    );
+
+    // Current suggestion being shown
+    const currentSuggestion = activeSuggestions[activeSuggestionIndex] || null;
 
     // Run Analysis on Mount
     useEffect(() => {
         if (resume && suggestions.length === 0 && !isAnalyzing) {
             runAnalysis();
         }
-    }, [resume]); // Run once when resume is loaded
+    }, [resume]);
 
     const runAnalysis = async () => {
         if (!resume) return;
         setIsAnalyzing(true);
         try {
-            // Default to empty JD string if null
             const jdText = jobDescription?.rawText || "";
             const result = await api.analyzeResume(resume, jdText);
             setScore(result.score);
             setSuggestions(result.suggestions);
+            setActiveSuggestionIndex(0);
         } catch (error) {
             console.error("Analysis failed:", error);
         } finally {
@@ -51,39 +65,26 @@ export default function EditorPage() {
         }
     };
 
-    // Filter suggestions
-    const filteredSuggestions = suggestions.filter(s => {
-        if (s.isDismissed || s.isAccepted) return false; // Hide processed
-        if (activeTab === 'critical') return s.type === 'critical';
-        if (activeTab === 'stylistic') return s.type === 'stylistic';
-        if (activeTab === 'formatting') return s.type === 'formatting' || s.type === 'content';
-        return true;
-    });
-
-    // Suggestion Handlers
-    const handleAccept = (id: string) => {
-        applySuggestion(id);
+    // Handle approve
+    const handleApprove = () => {
+        if (!currentSuggestion) return;
+        applySuggestion(currentSuggestion.id);
+        // Auto-advance to next suggestion (index stays same since array shrinks)
     };
 
-    const handleDismiss = (id: string) => {
-        dismissSuggestion(id);
+    // Handle discard
+    const handleDiscard = () => {
+        if (!currentSuggestion) return;
+        dismissSuggestion(currentSuggestion.id);
     };
 
-    // Handle zoom
-    const handleZoomIn = () => setZoom(prev => Math.min(prev + 10, 200));
-    const handleZoomOut = () => setZoom(prev => Math.max(prev - 10, 50));
-
-    // Handle bullet edit
-    const handleBulletEdit = useCallback((sectionId: string, itemId: string, bulletId: string, newText: string) => {
-        if (!resume) return;
-        updateBullet(sectionId, itemId, bulletId, newText);
-    }, [resume, updateBullet]);
-
-    // Handle metadata edit
-    const handleMetadataEdit = useCallback((field: string, value: string) => {
-        if (!resume) return;
-        updateMetadata(field as keyof typeof resume.metadata, value);
-    }, [resume, updateMetadata]);
+    // Handle custom prompt submit
+    const handleCustomPrompt = async () => {
+        if (!customPrompt.trim() || !resume) return;
+        // TODO: Implement custom AI edit
+        console.log("Custom prompt:", customPrompt);
+        setCustomPrompt('');
+    };
 
     // Export to PDF
     const handleExportPdf = async () => {
@@ -100,167 +101,214 @@ export default function EditorPage() {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         } catch (error) {
-            console.error('PDF export failed:', error);
-            alert('Failed to export PDF');
+            console.error("Export failed:", error);
         } finally {
             setIsExporting(false);
         }
     };
 
+    // Drag and drop handlers for section reordering
+    const handleDragStart = (sectionId: string) => {
+        setDraggedSectionId(sectionId);
+    };
+
+    const handleDragOver = (e: React.DragEvent, targetId: string) => {
+        e.preventDefault();
+        if (!draggedSectionId || draggedSectionId === targetId) return;
+    };
+
+    const handleDrop = (targetId: string) => {
+        if (!draggedSectionId || draggedSectionId === targetId) return;
+
+        const currentSections = [...sections].sort((a, b) => a.order - b.order);
+        const draggedIndex = currentSections.findIndex(s => s.id === draggedSectionId);
+        const targetIndex = currentSections.findIndex(s => s.id === targetId);
+
+        if (draggedIndex === -1 || targetIndex === -1) return;
+
+        // Reorder: remove dragged item and insert at target position
+        const [draggedSection] = currentSections.splice(draggedIndex, 1);
+        currentSections.splice(targetIndex, 0, draggedSection);
+
+        // Update with new order
+        reorderSections(currentSections.map(s => s.id));
+        setDraggedSectionId(null);
+    };
+
+    const handleDragEnd = () => {
+        setDraggedSectionId(null);
+    };
+
+    // Get highlighted bullet ID from current suggestion
+    // For ADD suggestions, we highlight the item instead
+    const highlightedBulletId = currentSuggestion?.bullet_id || null;
+    const highlightedItemId = currentSuggestion?.action === 'add' ? currentSuggestion?.item_id : null;
+
+    // Section list for manager (sorted by order)
+    const sections = resume?.sections ? [...resume.sections].sort((a, b) => a.order - b.order) : [];
+
+
+
     if (!resume) {
         return (
             <div className={styles.loadingContainer}>
-                <p>Loading resume...</p>
-                <Link href="/">Back to Upload</Link>
+                <p>No resume loaded. <Link href="/">Go back</Link></p>
             </div>
         );
     }
 
     return (
         <div className={styles.container}>
-            {/* Top Header */}
+            {/* Top Bar */}
             <header className={styles.topBar}>
                 <div className={styles.fileInfo}>
-                    <div className={styles.fileIcon}>📄</div>
+                    <Link href="/" className={styles.backButton}>←</Link>
                     <div className={styles.fileName}>
-                        <span className={styles.roleName}>{resume.metadata.name || 'Resume'}</span>
-                        <span className={styles.saveStatus}>Last saved just now</span>
+                        <span className={styles.roleName}>{resume.metadata.name || 'Untitled'}</span>
+                        <span className={styles.saveStatus}>All changes saved</span>
                     </div>
                 </div>
-
                 <div className={styles.actions}>
-                    <div className={styles.scoreBadge}>
-                        <span className={styles.scoreLabel}>SCORE</span>
-                        <span className={styles.scoreValue}>{score}%</span>
-                    </div>
                     <button
                         className={styles.exportButton}
                         onClick={handleExportPdf}
                         disabled={isExporting}
                     >
-                        {isExporting ? 'Exporting...' : '📥 Export PDF'}
+                        {isExporting ? 'Exporting...' : 'Export PDF'}
                     </button>
-                    <div className={styles.userAvatar}>👤</div>
                 </div>
             </header>
 
-            <main className={styles.mainLayout}>
-                {/* Left: Canvas Area */}
-                <div className={styles.canvasArea}>
-                    <div
-                        className={styles.resumeWrapper}
-                        style={{ transform: `scale(${zoom / 100})` }}
-                    >
-                        <ResumePreview
-                            resume={resume}
-                            onBulletEdit={handleBulletEdit}
-                            onMetadataEdit={handleMetadataEdit}
-                        />
-                    </div>
+            {/* Main Content */}
+            <main className={styles.mainArea}>
+                {/* Document Preview */}
+                <section className={styles.previewPane}>
+                    <ResumePreview
+                        resume={resume}
+                        highlightedBulletId={highlightedBulletId}
+                        highlightedItemId={highlightedItemId}
+                    />
+                </section>
 
-                    {/* Zoom Controls (Floating) */}
-                    <div className={styles.zoomControls}>
-                        <button onClick={handleZoomOut}>−</button>
-                        <span>{zoom}%</span>
-                        <button onClick={handleZoomIn}>+</button>
-                    </div>
-                </div>
-
-                {/* Right: AI Sidebar */}
+                {/* Right Sidebar */}
                 <aside className={styles.sidebar}>
-                    <div className={styles.sidebarHeader}>
-                        <h3>AI Copilot</h3>
-                        <span className={styles.suggestionCount}>{suggestions.length} Suggestions</span>
-                    </div>
-
-                    <div className={styles.scoreCard}>
-                        <div className={styles.scoreRow}>
-                            <span>Optimization Score</span>
-                            <span className={styles.scoreHigh}>{score}%</span>
+                    {/* Suggestion Panel */}
+                    <div className={styles.suggestionPanel}>
+                        <div className={styles.panelHeader}>
+                            <span className={styles.panelLabel}>SUGGESTION</span>
+                            <span className={styles.suggestionCount}>
+                                {activeSuggestions.length > 0
+                                    ? `${activeSuggestionIndex + 1} of ${activeSuggestions.length}`
+                                    : '—'
+                                }
+                            </span>
                         </div>
-                        <div className={styles.progressBar}>
-                            <div className={styles.progressFill} style={{ width: `${score}%` }}></div>
-                        </div>
-                        <div className={styles.scoreStatus}>
-                            {isAnalyzing ? "Analyzing resume..." : "Analysis complete."}
-                        </div>
-                    </div>
 
-                    <div className={styles.tabs}>
-                        <button
-                            className={activeTab === 'critical' ? styles.activeTab : styles.tab}
-                            onClick={() => setActiveTab('critical')}
-                        >
-                            Critical ({suggestions.filter(s => s.type === 'critical').length})
-                        </button>
-                        <button
-                            className={activeTab === 'stylistic' ? styles.activeTab : styles.tab}
-                            onClick={() => setActiveTab('stylistic')}
-                        >
-                            Stylistic ({suggestions.filter(s => s.type === 'stylistic').length})
-                        </button>
-                        <button
-                            className={activeTab === 'formatting' ? styles.activeTab : styles.tab}
-                            onClick={() => setActiveTab('formatting')}
-                        >
-                            Formatting
-                        </button>
-                    </div>
+                        {isAnalyzing ? (
+                            <div className={styles.analyzingState}>
+                                <div className={styles.spinner}></div>
+                                <p>Analyzing your resume...</p>
+                            </div>
+                        ) : currentSuggestion ? (
+                            <div className={styles.suggestionContent}>
+                                <h3 className={styles.suggestionTitle}>
+                                    {currentSuggestion.title}
+                                </h3>
 
-                    <div className={styles.suggestionList}>
-                        {isAnalyzing && <div className={styles.loadingSuggestion}>Analyzing...</div>}
-
-                        {!isAnalyzing && filteredSuggestions.length === 0 && (
-                            <div className={styles.emptyState}>No suggestions in this category.</div>
-                        )}
-
-                        {filteredSuggestions.map(suggestion => (
-                            <div key={suggestion.id} className={styles.suggestionCard}>
-                                <div className={styles.cardHeader}>
-                                    <span className={styles.impactTag}>
-                                        {suggestion.score_impact > 0 && `+${suggestion.score_impact} PTS`}
-                                    </span>
-                                    <span className={styles.sectionTag}>{suggestion.action}</span>
-                                </div>
-                                <h4>{suggestion.title}</h4>
-                                <p>{suggestion.description}</p>
-
-                                {(suggestion.current_text && suggestion.suggested_text) && (
-                                    <div className={styles.diffBox}>
-                                        <div className={styles.diffOld}>{suggestion.current_text}</div>
-                                        <div className={styles.diffNew}>{suggestion.suggested_text}</div>
+                                {currentSuggestion.current_text && (
+                                    <div className={styles.textBlock}>
+                                        <label>Current Text</label>
+                                        <p className={styles.currentText}>
+                                            {currentSuggestion.current_text}
+                                        </p>
                                     </div>
                                 )}
 
-                                <div className={styles.cardActions}>
+                                {currentSuggestion.suggested_text && (
+                                    <div className={styles.textBlock}>
+                                        <label>Proposed Text</label>
+                                        <p className={styles.proposedText}>
+                                            {currentSuggestion.suggested_text}
+                                        </p>
+                                    </div>
+                                )}
+
+                                <div className={styles.actionButtons}>
                                     <button
-                                        className={styles.acceptButton}
-                                        onClick={() => handleAccept(suggestion.id)}
+                                        className={styles.approveButton}
+                                        onClick={handleApprove}
                                     >
-                                        ✓ Accept
+                                        Approve
                                     </button>
                                     <button
-                                        className={styles.dismissButton}
-                                        onClick={() => handleDismiss(suggestion.id)}
+                                        className={styles.discardButton}
+                                        onClick={handleDiscard}
                                     >
-                                        ✕ Dismiss
+                                        Discard
                                     </button>
                                 </div>
                             </div>
-                        ))}
+                        ) : (
+                            <div className={styles.noSuggestions}>
+                                <p>✓ All suggestions reviewed!</p>
+                                <p className={styles.scoreDisplay}>ATS Score: {score}%</p>
+                            </div>
+                        )}
                     </div>
 
-                    {/* Chat / Prompt Input */}
-                    <div className={styles.chatInputArea}>
-                        <div className={styles.chatBox}>
-                            <span className={styles.sparkleIcon}>✨</span>
-                            <input type="text" placeholder="Ask AI to rewrite a section..." />
-                            <button className={styles.sendButton}>↑</button>
+                    {/* Custom Edit Input */}
+                    <div className={styles.customEditSection}>
+                        <label className={styles.sectionLabel}>CUSTOM EDIT</label>
+                        <div className={styles.customEditBox}>
+                            <input
+                                type="text"
+                                placeholder="Reword, add metrics, reorder..."
+                                value={customPrompt}
+                                onChange={(e) => setCustomPrompt(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleCustomPrompt()}
+                            />
+                            <button
+                                className={styles.sendButton}
+                                onClick={handleCustomPrompt}
+                                disabled={!customPrompt.trim()}
+                            >
+                                →
+                            </button>
                         </div>
-                        <div className={styles.disclaimer}>AI can make mistakes. Please review suggestions.</div>
+                    </div>
+
+                    {/* Section Manager */}
+                    <div className={styles.sectionManager}>
+                        <label className={styles.sectionLabel}>SECTION MANAGER</label>
+                        <p className={styles.sectionHint}>Drag to reorder</p>
+                        <div className={styles.sectionList}>
+                            {sections.map(section => (
+                                <div
+                                    key={section.id}
+                                    className={`${styles.sectionItem} ${expandedSection === section.type ? styles.activeSection : ''} ${draggedSectionId === section.id ? styles.dragging : ''}`}
+                                    draggable
+                                    onDragStart={() => handleDragStart(section.id)}
+                                    onDragOver={(e) => handleDragOver(e, section.id)}
+                                    onDrop={() => handleDrop(section.id)}
+                                    onDragEnd={handleDragEnd}
+                                    onClick={() => setExpandedSection(section.type)}
+                                >
+                                    <span className={styles.dragHandle}>⋮⋮</span>
+                                    <span className={styles.sectionTitle}>{section.title}</span>
+                                    <span className={styles.chevron}>›</span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </aside>
             </main>
+
+            {/* Bottom Score Bar */}
+            <footer className={styles.bottomBar}>
+                <div className={styles.scoreIndicator}>
+                    <span className={styles.scoreValue}>{score}%</span>
+                </div>
+            </footer>
         </div>
     );
 }

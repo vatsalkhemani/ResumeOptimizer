@@ -141,8 +141,8 @@ export interface RenderResponse {
 }
 
 // Analysis Types
-export type SuggestionType = 'critical' | 'stylistic' | 'formatting' | 'content';
-export type SuggestionAction = 'rewrite' | 'add' | 'delete' | 'format';
+export type SuggestionType = 'critical' | 'enhancement';
+export type SuggestionAction = 'rewrite' | 'add' | 'delete' | 'remove';
 
 export interface Suggestion {
     id: string;

@@ -1,10 +1,10 @@
-/* Dark Premium Editor Theme */
+/* Redesigned Editor - Clean UI matching reference */
+
 .container {
   display: flex;
   flex-direction: column;
   height: 100vh;
   background-color: #0f1115;
-  /* Very dark background */
   color: #e5e7eb;
   font-family: 'Inter', system-ui, sans-serif;
   overflow: hidden;
@@ -15,10 +15,10 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 60px;
-  padding: 0 24px;
+  height: 56px;
+  padding: 0 20px;
   background-color: #0f1115;
-  border-bottom: 1px solid #27272a;
+  border-bottom: 1px solid #1f2023;
   flex-shrink: 0;
 }
 
@@ -28,16 +28,23 @@
   gap: 12px;
 }
 
-.fileIcon {
-  font-size: 20px;
-  color: #3b82f6;
-  background: rgba(59, 130, 246, 0.1);
-  width: 32px;
-  height: 32px;
+.backButton {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 32px;
+  height: 32px;
   border-radius: 6px;
+  background: #1a1b1f;
+  color: #a1a1aa;
+  text-decoration: none;
+  font-size: 16px;
+  transition: all 0.15s;
+}
+
+.backButton:hover {
+  background: #27272a;
+  color: #fff;
 }
 
 .fileName {
@@ -53,40 +60,16 @@
 
 .saveStatus {
   font-size: 11px;
-  color: #71717a;
+  color: #52525b;
 }
 
 .actions {
   display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.scoreBadge {
-  display: flex;
-  align-items: center;
-  background: #18181b;
-  border: 1px solid #27272a;
-  border-radius: 20px;
-  padding: 4px 12px;
-  gap: 8px;
-}
-
-.scoreLabel {
-  font-size: 10px;
-  font-weight: 700;
-  color: #71717a;
-  letter-spacing: 0.5px;
-}
-
-.scoreValue {
-  font-size: 13px;
-  font-weight: 600;
-  color: #3b82f6;
+  gap: 12px;
 }
 
 .exportButton {
-  background: #3b82f6;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: white;
   border: none;
   padding: 8px 16px;
@@ -98,393 +81,370 @@
 }
 
 .exportButton:hover {
-  background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
-.userAvatar {
-  width: 32px;
-  height: 32px;
-  background: #27272a;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
+.exportButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-/* Main Layout */
-.mainLayout {
-  display: flex;
+/* Main Area */
+.mainArea {
   flex: 1;
+  display: flex;
   overflow: hidden;
 }
 
-/* Canvas Area */
-.canvasArea {
+/* Preview Pane */
+.previewPane {
   flex: 1;
-  background-color: #18181b;
-  /* Dark canvas */
-  display: flex;
-  justify-content: center;
-  overflow: auto;
-  position: relative;
-  padding: 40px;
-}
-
-.resumeWrapper {
-  transform-origin: top center;
-  transition: transform 0.2s ease;
-  padding-bottom: 100px;
-}
-
-/* Zoom Controls */
-.zoomControls {
-  position: absolute;
-  bottom: 24px;
-  left: 24px;
-  background: #27272a;
-  border-radius: 20px;
-  padding: 6px 12px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: #fff;
-  font-size: 13px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.zoomControls button {
-  background: none;
-  border: none;
-  color: #a1a1aa;
-  cursor: pointer;
-  font-size: 16px;
-  padding: 0 4px;
-}
-
-.zoomControls button:hover {
-  color: #fff;
+  overflow-y: auto;
+  padding: 24px;
+  background: #0a0a0c;
 }
 
 /* Sidebar */
 .sidebar {
-  width: 400px;
-  background-color: #0f1115;
-  border-left: 1px solid #27272a;
+  width: 340px;
+  background: #0f1115;
+  border-left: 1px solid #1f2023;
   display: flex;
   flex-direction: column;
-}
-
-.sidebarHeader {
-  padding: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-}
-
-.sidebarHeader h3 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #fff;
-}
-
-.suggestionCount {
-  font-size: 12px;
-  color: #3b82f6;
-  background: rgba(59, 130, 246, 0.1);
-  padding: 2px 8px;
-  border-radius: 10px;
-}
-
-/* Score Card */
-.scoreCard {
-  margin: 0 20px 20px 20px;
-  background: #18191d;
-  border: 1px solid #27272a;
-  border-radius: 8px;
-  padding: 16px;
-}
-
-.scoreRow {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  font-size: 13px;
-}
-
-.scoreHigh {
-  color: #3b82f6;
-  font-weight: 700;
-}
-
-.progressBar {
-  height: 6px;
-  background: #27272a;
-  border-radius: 3px;
-  margin-bottom: 8px;
   overflow: hidden;
 }
 
-.progressFill {
-  height: 100%;
-  background: #2563eb;
-  border-radius: 3px;
-}
-
-.scoreStatus {
-  font-size: 11px;
-  color: #22c55e;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-/* Tabs */
-.tabs {
-  display: flex;
-  border-bottom: 1px solid #27272a;
-  padding: 0 20px;
-  gap: 20px;
-}
-
-.tab {
-  background: none;
-  border: none;
-  padding: 12px 0;
-  color: #71717a;
-  font-size: 13px;
-  cursor: pointer;
-  position: relative;
-}
-
-.activeTab {
-  composes: tab;
-  color: #fff;
-  font-weight: 500;
-}
-
-.activeTab::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: #3b82f6;
-}
-
-/* Suggestion List */
-.suggestionList {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.suggestionCard {
-  background: #18191d;
-  border: 1px solid #27272a;
-  border-radius: 8px;
+/* Suggestion Panel */
+.suggestionPanel {
   padding: 16px;
+  border-bottom: 1px solid #1f2023;
 }
 
-.cardHeader {
+.panelHeader {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin-bottom: 12px;
 }
 
-.impactTag {
+.panelLabel {
   font-size: 10px;
   font-weight: 700;
-  color: #fbbf24;
-  /* Amber */
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.missingTag {
-  font-size: 10px;
-  font-weight: 700;
-  color: #ef4444;
-  /* Red */
-}
-
-.sectionTag {
-  font-size: 10px;
   color: #52525b;
-  text-transform: uppercase;
-  background: #27272a;
-  padding: 2px 6px;
-  border-radius: 4px;
+  letter-spacing: 0.5px;
 }
 
-.suggestionCard h4 {
-  margin: 0 0 6px 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: #fff;
-}
-
-.suggestionCard p {
-  margin: 0 0 12px 0;
-  font-size: 12px;
-  color: #a1a1aa;
-  line-height: 1.5;
-}
-
-/* Diffs */
-.diffBox {
-  background: #0f1115;
-  border-radius: 6px;
-  padding: 12px;
-  margin-bottom: 16px;
-  font-family: monospace;
+.suggestionCount {
   font-size: 11px;
+  color: #3b82f6;
+  font-weight: 500;
 }
 
-.diffOld {
-  color: #ef4444;
-  margin-bottom: 6px;
-  text-decoration: line-through;
-  opacity: 0.7;
+.analyzingState {
+  text-align: center;
+  padding: 24px;
+  color: #71717a;
 }
 
-.diffNew {
-  color: #22c55e;
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #27272a;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px;
 }
 
-/* Card Actions */
-.cardActions {
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.suggestionContent {
   display: flex;
+  flex-direction: column;
   gap: 12px;
 }
 
-.acceptButton {
-  flex: 1;
-  background: #2563eb;
-  color: white;
-  border: none;
-  padding: 8px;
-  border-radius: 6px;
+.suggestionTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+
+.textBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.textBlock label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #52525b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.currentText {
   font-size: 12px;
+  line-height: 1.5;
+  color: #a1a1aa;
+  background: #1a1b1f;
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin: 0;
+  border-left: 2px solid #52525b;
+}
+
+.proposedText {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.08);
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin: 0;
+  border-left: 2px solid #22c55e;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.approveButton {
+  flex: 1;
+  background: #22c55e;
+  color: #000;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s;
 }
 
-.dismissButton {
+.approveButton:hover {
+  background: #16a34a;
+}
+
+.discardButton {
   flex: 1;
   background: #27272a;
   color: #a1a1aa;
   border: none;
-  padding: 8px;
+  padding: 10px 16px;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
+  transition: all 0.2s;
 }
 
-.addButton {
-  width: 100%;
-  background: #27272a;
-  color: #fff;
-  border: none;
-  padding: 8px;
-  border-radius: 6px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.addButton:hover {
+.discardButton:hover {
   background: #3f3f46;
+  color: #fff;
 }
 
-/* Chat Input */
-.chatInputArea {
-  padding: 20px;
-  border-top: 1px solid #27272a;
-  background: #0f1115;
+.noSuggestions {
+  text-align: center;
+  padding: 24px;
+  color: #71717a;
 }
 
-.chatBox {
+.noSuggestions p:first-child {
+  font-size: 14px;
+  color: #22c55e;
+  margin: 0 0 8px 0;
+}
+
+.scoreDisplay {
+  font-size: 20px;
+  font-weight: 700;
+  color: #3b82f6;
+  margin: 0;
+}
+
+/* Custom Edit Section */
+.customEditSection {
+  padding: 16px;
+  border-bottom: 1px solid #1f2023;
+}
+
+.sectionLabel {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: #52525b;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.customEditBox {
   display: flex;
-  align-items: center;
-  background: #18191d;
+  background: #1a1b1f;
   border: 1px solid #27272a;
   border-radius: 8px;
-  padding: 8px 12px;
-  gap: 8px;
+  overflow: hidden;
 }
 
-.sparkleIcon {
-  color: #a1a1aa;
-  font-size: 14px;
-}
-
-.chatBox input {
+.customEditBox input {
   flex: 1;
-  background: none;
+  background: transparent;
   border: none;
+  padding: 10px 12px;
+  font-size: 12px;
   color: #fff;
-  font-size: 13px;
   outline: none;
 }
 
-.chatBox input::placeholder {
+.customEditBox input::placeholder {
   color: #52525b;
 }
 
 .sendButton {
-  width: 24px;
-  height: 24px;
-  background: #27272a;
-  color: #fff;
+  background: #3b82f6;
   border: none;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  color: white;
+  width: 36px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
+  transition: background 0.2s;
 }
 
-.disclaimer {
-  margin-top: 8px;
-  text-align: center;
+.sendButton:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.sendButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Section Manager */
+.sectionManager {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.sectionHint {
   font-size: 10px;
   color: #52525b;
+  margin: 0 0 8px 0;
+  font-style: italic;
 }
 
-/* Loading State */
+.sectionList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sectionItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #1a1b1f;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #a1a1aa;
+  font-size: 13px;
+  cursor: grab;
+  transition: all 0.15s;
+  text-align: left;
+  user-select: none;
+}
+
+.sectionItem:hover {
+  background: #27272a;
+  color: #fff;
+  border-color: #3f3f46;
+}
+
+.sectionItem.activeSection {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.sectionItem.dragging {
+  opacity: 0.5;
+  border-color: #3b82f6;
+  cursor: grabbing;
+}
+
+.dragHandle {
+  color: #52525b;
+  font-size: 10px;
+  letter-spacing: -3px;
+  cursor: grab;
+}
+
+.sectionItem:hover .dragHandle {
+  color: #71717a;
+}
+
+.sectionTitle {
+  flex: 1;
+}
+
+.chevron {
+  font-size: 14px;
+  transition: transform 0.2s;
+  color: #71717a;
+}
+
+.sectionItem.activeSection .chevron {
+  color: #fff;
+  transform: rotate(90deg);
+}
+
+/* Bottom Bar */
+.bottomBar {
+  height: 48px;
+  background: #0f1115;
+  border-top: 1px solid #1f2023;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.scoreIndicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.scoreValue {
+  font-size: 16px;
+  font-weight: 700;
+  color: #3b82f6;
+}
+
+/* Loading Container */
 .loadingContainer {
   display: flex;
   flex-direction: column;
-  items: center;
+  align-items: center;
   justify-content: center;
   height: 100vh;
   background: #0f1115;
-  color: #fff;
-  gap: 16px;
-}
-
-.loadingSuggestion {
-  text-align: center;
-  padding: 24px;
-  color: #a1a1aa;
-  font-size: 13px;
-  font-style: italic;
-  border: 1px dashed #27272a;
-  border-radius: 8px;
-  background: #18191d;
-}
-
-.emptyState {
-  text-align: center;
-  padding: 32px;
   color: #71717a;
-  font-size: 13px;
+}
+
+.loadingContainer a {
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+.loadingContainer a:hover {
+  text-decoration: underline;
 }

@@ -173,6 +173,26 @@
     border-radius: 2px;
 }
 
+/* Highlighted bullet (active suggestion) */
+.highlightedBullet {
+    background-color: rgba(251, 191, 36, 0.3) !important;
+    border-left: 3px solid #fbbf24;
+    padding-left: 6px;
+    margin-left: -9px;
+    border-radius: 2px;
+    transition: background-color 0.3s ease;
+}
+
+/* Highlighted item (for ADD suggestions) */
+.highlightedItem {
+    background-color: rgba(59, 130, 246, 0.1);
+    border-left: 3px solid #3b82f6;
+    padding-left: 8px;
+    margin-left: -11px;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
 /* Skills */
 .skillsContainer {
     display: flex;

@@ -22,6 +22,7 @@ interface DocumentState {
     isLoading: boolean;
     error: string | null;
     selectedSuggestionId: string | null;
+    activeSuggestionIndex: number; // For single-suggestion view
 
     // History for undo/redo
     history: Resume[];
@@ -36,10 +37,12 @@ interface DocumentState {
     setSuggestions: (suggestions: Suggestion[]) => void;
     setScore: (score: number) => void;
     setSelectedSuggestion: (id: string | null) => void;
+    setActiveSuggestionIndex: (index: number) => void;
 
     // Resume mutations
     updateMetadata: (field: string, value: string) => void;
     updateBullet: (sectionId: string, itemId: string, bulletId: string, text: string) => void;
+    addBullet: (sectionId: string, itemId: string, text: string) => void;
     addSection: (section: ResumeSection) => void;
     removeSection: (sectionId: string) => void;
     reorderSections: (sectionIds: string[]) => void;
@@ -47,6 +50,8 @@ interface DocumentState {
     // Suggestion actions
     applySuggestion: (suggestionId: string) => void;
     dismissSuggestion: (suggestionId: string) => void;
+    nextSuggestion: () => void;
+    prevSuggestion: () => void;
 
     // History actions
     undo: () => void;
@@ -66,6 +71,7 @@ const initialState = {
     isLoading: false,
     error: null,
     selectedSuggestionId: null,
+    activeSuggestionIndex: 0,
     history: [],
     future: [],
 };
@@ -95,6 +101,24 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     setScore: (score) => set({ score }),
 
     setSelectedSuggestion: (id) => set({ selectedSuggestionId: id }),
+
+    setActiveSuggestionIndex: (index) => set({ activeSuggestionIndex: index }),
+
+    nextSuggestion: () => {
+        const { activeSuggestionIndex, suggestions } = get();
+        const activeSuggestions = suggestions.filter(s => !s.isAccepted && !s.isDismissed);
+        if (activeSuggestions.length === 0) return;
+        const nextIndex = (activeSuggestionIndex + 1) % activeSuggestions.length;
+        set({ activeSuggestionIndex: nextIndex });
+    },
+
+    prevSuggestion: () => {
+        const { activeSuggestionIndex, suggestions } = get();
+        const activeSuggestions = suggestions.filter(s => !s.isAccepted && !s.isDismissed);
+        if (activeSuggestions.length === 0) return;
+        const prevIndex = activeSuggestionIndex === 0 ? activeSuggestions.length - 1 : activeSuggestionIndex - 1;
+        set({ activeSuggestionIndex: prevIndex });
+    },
 
     updateMetadata: (field, value) => {
         const resume = get().resume;
@@ -140,6 +164,51 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
                             };
                         }
                         return item;
+                    }),
+                };
+            }),
+            updated_at: new Date().toISOString(),
+        };
+
+        set({
+            resume: updated,
+            history: current ? [...get().history, current] : get().history,
+            future: [],
+        });
+    },
+
+    addBullet: (sectionId, itemId, text) => {
+        const resume = get().resume;
+        if (!resume) return;
+
+        const current = get().resume;
+        const newBulletId = `bullet-${Date.now()}`;
+
+        const updated = {
+            ...resume,
+            sections: resume.sections.map(section => {
+                if (section.id !== sectionId) return section;
+                return {
+                    ...section,
+                    items: section.items.map(item => {
+                        if (item.id !== itemId) return item;
+                        const content = item.content as any;
+                        if (!content.bullets) return item;
+
+                        const maxOrder = content.bullets.length > 0
+                            ? Math.max(...content.bullets.map((b: any) => b.order))
+                            : -1;
+
+                        return {
+                            ...item,
+                            content: {
+                                ...content,
+                                bullets: [
+                                    ...content.bullets,
+                                    { id: newBulletId, text, order: maxOrder + 1 }
+                                ],
+                            },
+                        };
                     }),
                 };
             }),
@@ -212,13 +281,17 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     },
 
     applySuggestion: (suggestionId) => {
-        const { suggestions, updateBullet } = get();
+        const { suggestions, updateBullet, addBullet } = get();
         const suggestion = suggestions.find(s => s.id === suggestionId);
 
         if (!suggestion) return;
 
-        // Handle Bullet Rewrite
-        if (suggestion.section_id && suggestion.item_id && suggestion.bullet_id && suggestion.suggested_text) {
+        // Handle based on action type
+        if (suggestion.action === 'add' && suggestion.section_id && suggestion.item_id && suggestion.suggested_text) {
+            // ADD action: create a new bullet
+            addBullet(suggestion.section_id, suggestion.item_id, suggestion.suggested_text);
+        } else if (suggestion.section_id && suggestion.item_id && suggestion.bullet_id && suggestion.suggested_text) {
+            // REWRITE action: update existing bullet
             updateBullet(suggestion.section_id, suggestion.item_id, suggestion.bullet_id, suggestion.suggested_text);
         }
 
@@ -233,7 +306,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     dismissSuggestion: (suggestionId) => {
         set({
             suggestions: get().suggestions.map(s =>
-                s.id === suggestionId ? { ...s, status: 'dismissed' as const } : s
+                s.id === suggestionId ? { ...s, isDismissed: true } : s
             ),
         });
     },

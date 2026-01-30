@@ -8,14 +8,13 @@ import uuid
 
 class SuggestionType(str, Enum):
     CRITICAL = "critical"
-    STYLISTIC = "stylistic"
-    FORMATTING = "formatting"
-    CONTENT = "content"
+    ENHANCEMENT = "enhancement"
 
 class SuggestionAction(str, Enum):
     REWRITE = "rewrite"
     ADD = "add"
     DELETE = "delete"
+    REMOVE = "remove"  # Alias for delete
     FORMAT = "format"
 
 class Suggestion(BaseModel):
