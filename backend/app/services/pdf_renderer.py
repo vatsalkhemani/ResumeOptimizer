@@ -8,8 +8,8 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib.colors import HexColor
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-from reportlab.lib.enums import TA_CENTER
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
 
 from app.models.resume import Resume, ResumeSection, SectionItem
 
@@ -18,87 +18,112 @@ class PDFRenderer:
     """Renders Resume model to PDF using ReportLab"""
     
     def __init__(self):
+        self.width = letter[0]
+        self.margin = 0.75 * inch
+        self.content_width = self.width - (2 * self.margin)
         self.styles = self._create_styles()
     
     def _create_styles(self):
         """Create custom paragraph styles for the resume"""
         styles = getSampleStyleSheet()
         
-        # Name style
+        # Name style (Merriweather 24pt Bold -> Times-Bold 24)
         styles.add(ParagraphStyle(
             name='ResumeName',
-            fontSize=18,
-            fontName='Helvetica-Bold',
+            fontSize=24,
+            fontName='Times-Bold',
             alignment=TA_CENTER,
-            spaceAfter=6,
-            textColor=HexColor('#1a1a1a')
+            spaceAfter=12,
+            textColor=HexColor('#111111'),
+            leading=28
         ))
         
-        # Contact style
+        # Contact style (Open Sans 9pt -> Helvetica 9)
         styles.add(ParagraphStyle(
             name='Contact',
             fontSize=9,
             fontName='Helvetica',
             alignment=TA_CENTER,
-            spaceAfter=12,
-            textColor=HexColor('#4b5563')
+            spaceAfter=18,
+            textColor=HexColor('#555555')
         ))
         
-        # Section title
+        # Section title (Times-Bold 11, line handled by Table)
         styles.add(ParagraphStyle(
             name='SectionTitle',
-            fontSize=10,
-            fontName='Helvetica-Bold',
-            spaceAfter=6,
-            spaceBefore=10,
-            textColor=HexColor('#1a1a1a'),
+            fontSize=11,
+            fontName='Times-Bold',
+            spaceAfter=0, # Spacing handled by table
+            spaceBefore=0,
+            textColor=HexColor('#333333'),
+            textTransform='uppercase', 
         ))
         
-        # Entry title (company/institution)
+        # Entry title (Role) (Times-Bold 11)
         styles.add(ParagraphStyle(
             name='EntryTitle',
-            fontSize=10,
-            fontName='Helvetica-Bold',
-            spaceAfter=1,
-            textColor=HexColor('#1a1a1a')
+            fontSize=11,
+            fontName='Times-Bold',
+            spaceAfter=0,
+            textColor=HexColor('#000000')
         ))
         
-        # Entry subtitle
+        # Entry Date (Times-Italic 10, Right)
+        styles.add(ParagraphStyle(
+            name='EntryDate',
+            fontSize=10,
+            fontName='Times-Italic',
+            alignment=TA_RIGHT,
+            textColor=HexColor('#666666')
+        ))
+        
+        # Entry subtitle (Company) (Times-Italic 10)
         styles.add(ParagraphStyle(
             name='EntrySubtitle',
-            fontSize=9,
-            fontName='Helvetica-Oblique',
-            spaceAfter=3,
-            textColor=HexColor('#4b5563')
+            fontSize=10,
+            fontName='Times-Italic',
+            spaceAfter=0,
+            textColor=HexColor('#444444')
+        ))
+
+        # Entry Location (Times-Italic 10, Right)
+        styles.add(ParagraphStyle(
+            name='EntryLocation',
+            fontSize=10,
+            fontName='Times-Italic',
+            alignment=TA_RIGHT,
+            textColor=HexColor('#444444')
         ))
         
-        # Bullet point
+        # Bullet point (Times-Roman 10)
         styles.add(ParagraphStyle(
             name='ResumeBullet',
-            fontSize=9,
-            fontName='Helvetica',
+            fontSize=10,
+            fontName='Times-Roman',
             leftIndent=12,
-            spaceAfter=2,
-            textColor=HexColor('#374151'),
+            spaceAfter=3,
+            textColor=HexColor('#1a1a1a'),
+            leading=15 
         ))
         
         # Summary text
         styles.add(ParagraphStyle(
             name='Summary',
-            fontSize=9,
-            fontName='Helvetica',
-            spaceAfter=6,
-            textColor=HexColor('#374151'),
-            leading=12
+            fontSize=10,
+            fontName='Times-Roman',
+            spaceAfter=8,
+            textColor=HexColor('#1a1a1a'),
+            leading=15
         ))
         
         # Skills
         styles.add(ParagraphStyle(
             name='Skills',
-            fontSize=9,
-            fontName='Helvetica',
+            fontSize=10,
+            fontName='Times-Roman',
             spaceAfter=3,
-            textColor=HexColor('#374151')
+            textColor=HexColor('#1a1a1a'),
+            leading=14
         ))
         
         return styles
@@ -137,10 +162,17 @@ class PDFRenderer:
         """Escape text for ReportLab paragraphs"""
         if not text:
             return ""
-        return (text
-            .replace("&", "&amp;")
-            .replace("<", "&lt;")
             .replace(">", "&gt;"))
+
+    def _parse_markdown(self, text):
+        """Parse basic markdown (**bold**) to ReportLab XML"""
+        if not text:
+            return ""
+        # First escape HTML
+        safe_text = self._escape(text)
+        # Replace **text** with <b>text</b>
+        import re
+        return re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', safe_text)
     
     def _get_attr(self, obj, attr, default=None):
         """Safely get attribute from object or dict"""
@@ -161,9 +193,21 @@ class PDFRenderer:
         for field in ['location', 'phone', 'email', 'linkedin', 'github', 'website']:
             value = self._get_attr(metadata, field, '')
             if value:
-                contact_parts.append(self._escape(value))
+                escaped_value = self._escape(value)
+                # Create links for email and URLs
+                if field == 'email':
+                    contact_parts.append(f'<a href="mailto:{escaped_value}">{escaped_value}</a>')
+                elif field in ['linkedin', 'github', 'website'] or value.startswith('http') or 'linkedin.com' in value:
+                    url = escaped_value
+                    if not url.startswith('http'):
+                        url = 'https://' + url
+                    # Display simpler text for long URLs? No, user usually wants the text to be the link
+                    contact_parts.append(f'<a href="{url}" color="blue">{escaped_value}</a>')
+                else:
+                    contact_parts.append(escaped_value)
         
         if contact_parts:
+            # Join with dot separator
             contact_text = "  •  ".join(contact_parts)
             elements.append(Paragraph(contact_text, self.styles['Contact']))
         
@@ -176,7 +220,17 @@ class PDFRenderer:
         
         # Section title
         title = self._escape(self._get_attr(section, 'title', '').upper())
-        elements.append(Paragraph(f"<u>{title}</u>", self.styles['SectionTitle']))
+        # Use Table for full width border
+        t = Table([[Paragraph(title, self.styles['SectionTitle'])]], colWidths=[self.content_width])
+        t.setStyle(TableStyle([
+            ('LINEBELOW', (0, 0), (-1, -1), 1, HexColor('#111111')),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('TOPPADDING', (0, 0), (-1, -1), 12),
+        ]))
+        elements.append(t)
+        elements.append(Spacer(1, 12))
         
         # Section items
         items = self._get_attr(section, 'items', [])
@@ -213,15 +267,39 @@ class PDFRenderer:
         end_date = self._escape(self._get_attr(item, 'end_date', '') or 'Present')
         date_range = f"{start_date} – {end_date}" if start_date else end_date
         
-        title_text = f"<b>{role}</b> <i>({date_range})</i>"
-        elements.append(Paragraph(title_text, self.styles['EntryTitle']))
-        
+        # Header Row: Role (Left) - Date (Right)
+        header_data = [[
+            Paragraph(role, self.styles['EntryTitle']),
+            Paragraph(date_range, self.styles['EntryDate'])
+        ]]
+        t_header = Table(header_data, colWidths=[self.content_width * 0.75, self.content_width * 0.25])
+        t_header.setStyle(TableStyle([
+            ('VALIGN', (0,0), (-1,-1), 'TOP'),
+            ('LEFTPADDING', (0,0), (-1,-1), 0),
+            ('RIGHTPADDING', (0,0), (-1,-1), 0),
+            ('TOPPADDING', (0,0), (-1,-1), 0),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ]))
+        elements.append(t_header)
+
         # Company and location
         company = self._escape(self._get_attr(item, 'company', ''))
         location = self._escape(self._get_attr(item, 'location', ''))
-        subtitle = company + (f", {location}" if location else "")
-        if subtitle:
-            elements.append(Paragraph(subtitle, self.styles['EntrySubtitle']))
+        
+        if company or location:
+            sub_data = [[
+                Paragraph(company, self.styles['EntrySubtitle']),
+                Paragraph(location, self.styles['EntryLocation'])
+            ]]
+            t_sub = Table(sub_data, colWidths=[self.content_width * 0.75, self.content_width * 0.25])
+            t_sub.setStyle(TableStyle([
+                ('VALIGN', (0,0), (-1,-1), 'TOP'),
+                ('LEFTPADDING', (0,0), (-1,-1), 0),
+                ('RIGHTPADDING', (0,0), (-1,-1), 0),
+                ('TOPPADDING', (0,0), (-1,-1), 0),
+                ('BOTTOMPADDING', (0,0), (-1,-1), 2), # Small space after subtitle
+            ]))
+            elements.append(t_sub)
         
         # Bullets
         bullets = self._get_attr(item, 'bullets', [])
@@ -229,18 +307,30 @@ class PDFRenderer:
             text = self._escape(self._get_attr(bullet, 'text', ''))
             elements.append(Paragraph(f"•  {text}", self.styles['ResumeBullet']))
         
-        elements.append(Spacer(1, 6))
+        elements.append(Spacer(1, 8))
         return elements
     
     def _build_education_item(self, item) -> list:
-        """Build an education entry"""
+        """Build an education entry flowable"""
         elements = []
         
         institution = self._escape(self._get_attr(item, 'institution', ''))
         end_date = self._escape(self._get_attr(item, 'end_date', ''))
         
-        title_text = f"<b>{institution}</b>" + (f" <i>({end_date})</i>" if end_date else "")
-        elements.append(Paragraph(title_text, self.styles['EntryTitle']))
+        # Header Row: Institution (Left) - Date (Right)
+        header_data = [[
+            Paragraph(institution, self.styles['EntryTitle']),
+            Paragraph(end_date, self.styles['EntryDate'])
+        ]]
+        t_header = Table(header_data, colWidths=[self.content_width * 0.75, self.content_width * 0.25])
+        t_header.setStyle(TableStyle([
+            ('VALIGN', (0,0), (-1,-1), 'TOP'),
+            ('LEFTPADDING', (0,0), (-1,-1), 0),
+            ('RIGHTPADDING', (0,0), (-1,-1), 0),
+            ('TOPPADDING', (0,0), (-1,-1), 0),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ]))
+        elements.append(t_header)
         
         degree = self._escape(self._get_attr(item, 'degree', ''))
         field = self._escape(self._get_attr(item, 'field', ''))
@@ -251,7 +341,7 @@ class PDFRenderer:
             degree_text += f" | GPA: {self._escape(gpa)}"
         
         elements.append(Paragraph(degree_text, self.styles['EntrySubtitle']))
-        elements.append(Spacer(1, 4))
+        elements.append(Spacer(1, 6))
         
         return elements
     
@@ -261,9 +351,9 @@ class PDFRenderer:
         
         categories = self._get_attr(item, 'categories', [])
         for category in categories:
-            cat_name = self._escape(self._get_attr(category, 'name', 'Skills'))
+            cat_name = self._parse_markdown(self._get_attr(category, 'name', 'Skills'))
             cat_skills = self._get_attr(category, 'skills', [])
-            skills = ", ".join([self._escape(s) for s in cat_skills])
+            skills = ", ".join([self._parse_markdown(s) for s in cat_skills])
             elements.append(Paragraph(f"<b>{cat_name}:</b> {skills}", self.styles['Skills']))
         
         return elements
@@ -287,9 +377,14 @@ class PDFRenderer:
         
         elements.append(Paragraph(title_text, self.styles['EntryTitle']))
         
+        # Add description if present
+        description = self._parse_markdown(self._get_attr(item, 'description', ''))
+        if description:
+            elements.append(Paragraph(description, self.styles['ResumeBullet'])) # Reuse bullet style (or Summary if needed)
+
         bullets = self._get_attr(item, 'bullets', [])
         for bullet in sorted(bullets, key=lambda b: self._get_attr(b, 'order', 0)):
-            text = self._escape(self._get_attr(bullet, 'text', ''))
+            text = self._parse_markdown(self._get_attr(bullet, 'text', ''))
             elements.append(Paragraph(f"•  {text}", self.styles['ResumeBullet']))
         
         elements.append(Spacer(1, 4))
@@ -304,8 +399,14 @@ class PDFRenderer:
             elements.append(Paragraph(f"<b>{self._escape(title)}</b>", self.styles['EntryTitle']))
         
         bullets = self._get_attr(item, 'bullets', [])
-        for bullet in sorted(bullets, key=lambda b: self._get_attr(b, 'order', 0)):
-            text = self._escape(self._get_attr(bullet, 'text', ''))
-            elements.append(Paragraph(f"•  {text}", self.styles['ResumeBullet']))
+        if bullets:
+            for bullet in sorted(bullets, key=lambda b: self._get_attr(b, 'order', 0)):
+                text = self._parse_markdown(self._get_attr(bullet, 'text', ''))
+                elements.append(Paragraph(f"•  {text}", self.styles['ResumeBullet']))
+        else:
+            # Fallback for text-only content (e.g. Leadership text)
+            text = self._parse_markdown(self._get_attr(item, 'text', '') or self._get_attr(item, 'description', ''))
+            if text:
+                 elements.append(Paragraph(text, self.styles['ResumeBullet']))
         
         return elements

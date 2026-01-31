@@ -3,7 +3,7 @@
  * Manages resume state with undo/redo support
  */
 import { create } from 'zustand';
-import { Resume, Suggestion, JobDescription, ResumeSection } from './types';
+import { Resume, Suggestion, JobDescription, ResumeSection, Keyword } from './types';
 
 interface DocumentState {
     // Core state
@@ -17,6 +17,8 @@ interface DocumentState {
 
     // AI Metrics
     score: number;
+    matchScore: number;
+    keywords: Keyword[];
 
     // UI state
     isLoading: boolean;
@@ -36,6 +38,8 @@ interface DocumentState {
     setJobDescription: (jd: JobDescription | null) => void;
     setSuggestions: (suggestions: Suggestion[]) => void;
     setScore: (score: number) => void;
+    setMatchScore: (score: number) => void;
+    setKeywords: (keywords: Keyword[]) => void;
     setSelectedSuggestion: (id: string | null) => void;
     setActiveSuggestionIndex: (index: number) => void;
 
@@ -43,8 +47,10 @@ interface DocumentState {
     updateMetadata: (field: string, value: string) => void;
     updateBullet: (sectionId: string, itemId: string, bulletId: string, text: string) => void;
     addBullet: (sectionId: string, itemId: string, text: string) => void;
+    removeBullet: (sectionId: string, itemId: string, bulletId: string) => void;
     addSection: (section: ResumeSection) => void;
     removeSection: (sectionId: string) => void;
+    removeSectionItem: (sectionId: string, itemId: string) => void;
     reorderSections: (sectionIds: string[]) => void;
 
     // Suggestion actions
@@ -64,6 +70,8 @@ interface DocumentState {
 const initialState = {
     resume: null,
     score: 0,
+    matchScore: 0,
+    keywords: [],
     suggestions: [],
     jobDescription: null,
     pdfBase64: null,
@@ -99,6 +107,8 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     setSuggestions: (suggestions) => set({ suggestions }),
 
     setScore: (score) => set({ score }),
+    setMatchScore: (score) => set({ matchScore: score }),
+    setKeywords: (keywords) => set({ keywords }),
 
     setSelectedSuggestion: (id) => set({ selectedSuggestionId: id }),
 
@@ -222,6 +232,65 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
         });
     },
 
+    removeBullet: (sectionId, itemId, bulletId) => {
+        const resume = get().resume;
+        if (!resume) return;
+
+        const current = get().resume;
+        const updated = {
+            ...resume,
+            sections: resume.sections.map(section => {
+                if (section.id !== sectionId) return section;
+                return {
+                    ...section,
+                    items: section.items.map(item => {
+                        if (item.id !== itemId) return item;
+                        const content = item.content as any;
+                        if (!content.bullets) return item;
+                        return {
+                            ...item,
+                            content: {
+                                ...content,
+                                bullets: content.bullets.filter((b: any) => b.id !== bulletId)
+                            }
+                        };
+                    })
+                };
+            }),
+            updated_at: new Date().toISOString(),
+        };
+
+        set({
+            resume: updated,
+            history: current ? [...get().history, current] : get().history,
+            future: [],
+        });
+    },
+
+    removeSectionItem: (sectionId, itemId) => {
+        const resume = get().resume;
+        if (!resume) return;
+
+        const current = get().resume;
+        const updated = {
+            ...resume,
+            sections: resume.sections.map(section => {
+                if (section.id !== sectionId) return section;
+                return {
+                    ...section,
+                    items: section.items.filter(item => item.id !== itemId)
+                };
+            }),
+            updated_at: new Date().toISOString(),
+        };
+
+        set({
+            resume: updated,
+            history: current ? [...get().history, current] : get().history,
+            future: [],
+        });
+    },
+
     addSection: (section) => {
         const resume = get().resume;
         if (!resume) return;
@@ -281,17 +350,65 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     },
 
     applySuggestion: (suggestionId) => {
-        const { suggestions, updateBullet, addBullet } = get();
+        const { suggestions, resume, updateBullet, addBullet } = get();
         const suggestion = suggestions.find(s => s.id === suggestionId);
 
-        if (!suggestion) return;
+        if (!suggestion || !resume) return;
 
-        // Handle based on action type
-        if (suggestion.action === 'add' && suggestion.section_id && suggestion.item_id && suggestion.suggested_text) {
-            // ADD action: create a new bullet
+        // Find the section to determine its type
+        const section = resume.sections.find(s => s.id === suggestion.section_id);
+        const sectionType = section?.type;
+
+        // Handle Skills sections specially
+        if (sectionType === 'skills' && suggestion.action === 'add' && suggestion.suggested_text) {
+            // For skills, add to the first category's skills array
+            const updated = {
+                ...resume,
+                sections: resume.sections.map(sec => {
+                    if (sec.id !== suggestion.section_id) return sec;
+                    return {
+                        ...sec,
+                        items: sec.items.map((item, idx) => {
+                            if (idx !== 0) return item; // Only modify first item
+                            const content = item.content as any;
+                            if (content.type !== 'skills' || !content.categories?.length) return item;
+                            // Add skill to first category
+                            return {
+                                ...item,
+                                content: {
+                                    ...content,
+                                    categories: content.categories.map((cat: any, catIdx: number) => {
+                                        if (catIdx !== 0) return cat;
+                                        return {
+                                            ...cat,
+                                            skills: [...cat.skills, suggestion.suggested_text]
+                                        };
+                                    })
+                                }
+                            };
+                        })
+                    };
+                }),
+                updated_at: new Date().toISOString(),
+            };
+            set({ resume: updated, history: [...get().history, resume], future: [] });
+        }
+        // Handle ADD action for bullet-based sections
+        else if (suggestion.action === 'add' && suggestion.section_id && suggestion.item_id && suggestion.suggested_text) {
             addBullet(suggestion.section_id, suggestion.item_id, suggestion.suggested_text);
-        } else if (suggestion.section_id && suggestion.item_id && suggestion.bullet_id && suggestion.suggested_text) {
-            // REWRITE action: update existing bullet
+        }
+        // Handle DELETE action
+        else if (suggestion.action === 'delete') {
+            // We need to fetch the latest remove functions as they might not be in the initial destructure
+            const { removeBullet, removeSectionItem } = get();
+            if (suggestion.section_id && suggestion.item_id && suggestion.bullet_id) {
+                removeBullet(suggestion.section_id, suggestion.item_id, suggestion.bullet_id);
+            } else if (suggestion.section_id && suggestion.item_id) {
+                removeSectionItem(suggestion.section_id, suggestion.item_id);
+            }
+        }
+        // Handle REWRITE action
+        else if (suggestion.section_id && suggestion.item_id && suggestion.bullet_id && suggestion.suggested_text) {
             updateBullet(suggestion.section_id, suggestion.item_id, suggestion.bullet_id, suggestion.suggested_text);
         }
 

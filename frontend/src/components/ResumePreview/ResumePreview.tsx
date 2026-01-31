@@ -22,6 +22,10 @@ import styles from './ResumePreview.module.css';
 interface ResumePreviewProps {
     resume: Resume;
     onBulletEdit?: (sectionId: string, itemId: string, bulletId: string, newText: string) => void;
+    onBulletDelete?: (sectionId: string, itemId: string, bulletId: string) => void;
+    onBulletAdd?: (sectionId: string, itemId: string) => void;
+    onItemDelete?: (sectionId: string, itemId: string) => void;
+    onSectionDelete?: (sectionId: string) => void;
     onMetadataEdit?: (field: keyof ResumeMetadata, value: string) => void;
     editable?: boolean;
     highlightedBulletId?: string | null;
@@ -31,13 +35,17 @@ interface ResumePreviewProps {
 export default function ResumePreview({
     resume,
     onBulletEdit,
+    onBulletDelete,
+    onBulletAdd,
+    onItemDelete,
+    onSectionDelete,
     onMetadataEdit,
     editable = true,
     highlightedBulletId = null,
     highlightedItemId = null
 }: ResumePreviewProps) {
     return (
-        <div className={styles.resume}>
+        <div className={styles.resume} data-resume-preview>
             <Header metadata={resume.metadata} onEdit={onMetadataEdit} editable={editable} />
             <div className={styles.sections}>
                 {resume.sections
@@ -47,6 +55,8 @@ export default function ResumePreview({
                             key={section.id}
                             section={section}
                             onBulletEdit={onBulletEdit}
+                            onBulletDelete={onBulletDelete}
+                            onItemDelete={onItemDelete}
                             editable={editable}
                             highlightedBulletId={highlightedBulletId}
                             highlightedItemId={highlightedItemId}
@@ -90,12 +100,26 @@ function Header({ metadata, onEdit, editable }: HeaderProps) {
                 {metadata.name}
             </h1>
             <div className={styles.contact}>
-                {contactParts.map((part, i) => (
-                    <span key={i} className={styles.contactItem}>
-                        {part}
-                        {i < contactParts.length - 1 && <span className={styles.separator}>•</span>}
-                    </span>
-                ))}
+                {contactParts.map((part, i) => {
+                    // Check if it's a URL or email
+                    const isUrl = part.includes('linkedin.com') || part.includes('github.com') || part.includes('http');
+                    const isEmail = part.includes('@') && !part.includes('http');
+
+                    return (
+                        <span key={i} className={styles.contactItem}>
+                            {isUrl ? (
+                                <a href={part.startsWith('http') ? part : `https://${part}`} target="_blank" rel="noopener noreferrer">
+                                    {part.replace(/^https?:\/\/(www\.)?/, '')}
+                                </a>
+                            ) : isEmail ? (
+                                <a href={`mailto:${part}`}>{part}</a>
+                            ) : (
+                                part
+                            )}
+                            {i < contactParts.length - 1 && <span className={styles.separator}>•</span>}
+                        </span>
+                    );
+                })}
             </div>
         </header>
     );
@@ -105,15 +129,30 @@ function Header({ metadata, onEdit, editable }: HeaderProps) {
 interface SectionProps {
     section: ResumeSection;
     onBulletEdit?: (sectionId: string, itemId: string, bulletId: string, newText: string) => void;
+    onBulletDelete?: (sectionId: string, itemId: string, bulletId: string) => void;
+    onBulletAdd?: (sectionId: string, itemId: string) => void;
+    onItemDelete?: (sectionId: string, itemId: string) => void;
+    onSectionDelete?: (sectionId: string) => void;
     editable: boolean;
     highlightedBulletId?: string | null;
     highlightedItemId?: string | null;
 }
 
-function Section({ section, onBulletEdit, editable, highlightedBulletId, highlightedItemId }: SectionProps) {
+function Section({ section, onBulletEdit, onBulletDelete, onBulletAdd, onItemDelete, onSectionDelete, editable, highlightedBulletId, highlightedItemId }: SectionProps) {
     return (
-        <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>{section.title}</h2>
+        <section id={`section-${section.id}`} className={styles.section}>
+            <h2 className={styles.sectionTitle}>
+                {section.title}
+                {editable && onSectionDelete && (
+                    <button
+                        className={styles.deleteSectionBtn}
+                        onClick={() => onSectionDelete(section.id)}
+                        title="Delete Section"
+                    >
+                        🗑️
+                    </button>
+                )}
+            </h2>
             <div className={styles.sectionContent}>
                 {section.items
                     .sort((a, b) => a.order - b.order)
@@ -123,6 +162,9 @@ function Section({ section, onBulletEdit, editable, highlightedBulletId, highlig
                             item={item}
                             sectionId={section.id}
                             onBulletEdit={onBulletEdit}
+                            onBulletDelete={onBulletDelete}
+                            onBulletAdd={onBulletAdd}
+                            onItemDelete={onItemDelete}
                             editable={editable}
                             highlightedBulletId={highlightedBulletId}
                             highlightedItemId={highlightedItemId}
@@ -133,17 +175,32 @@ function Section({ section, onBulletEdit, editable, highlightedBulletId, highlig
     );
 }
 
+// Helper to render markdown bold (**text**) as HTML
+const renderWithMarkdown = (text: string) => {
+    // Split by **bold** pattern
+    const parts = text.split(/(\*\*[^*]+\*\*)/g);
+    return parts.map((part, i) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={i}>{part.slice(2, -2)}</strong>;
+        }
+        return part;
+    });
+};
+
 // Section Item Renderer - handles different content types
 interface SectionItemRendererProps {
     item: SectionItem;
     sectionId: string;
     onBulletEdit?: (sectionId: string, itemId: string, bulletId: string, newText: string) => void;
+    onBulletDelete?: (sectionId: string, itemId: string, bulletId: string) => void;
+    onBulletAdd?: (sectionId: string, itemId: string) => void;
+    onItemDelete?: (sectionId: string, itemId: string) => void;
     editable: boolean;
     highlightedBulletId?: string | null;
     highlightedItemId?: string | null;
 }
 
-function SectionItemRenderer({ item, sectionId, onBulletEdit, editable, highlightedBulletId, highlightedItemId }: SectionItemRendererProps) {
+function SectionItemRenderer({ item, sectionId, onBulletEdit, onBulletDelete, onBulletAdd, onItemDelete, editable, highlightedBulletId, highlightedItemId }: SectionItemRendererProps) {
     const content = item.content;
     const isItemHighlighted = highlightedItemId === item.id;
 
@@ -152,17 +209,17 @@ function SectionItemRenderer({ item, sectionId, onBulletEdit, editable, highligh
     const renderContent = () => {
         switch (content.type) {
             case 'experience':
-                return <ExperienceEntry content={content} itemId={item.id} sectionId={sectionId} onBulletEdit={onBulletEdit} editable={editable} highlightedBulletId={highlightedBulletId} />;
+                return <ExperienceEntry content={content} itemId={item.id} sectionId={sectionId} onBulletEdit={onBulletEdit} onBulletDelete={onBulletDelete} onBulletAdd={onBulletAdd} onItemDelete={onItemDelete} editable={editable} highlightedBulletId={highlightedBulletId} />;
             case 'education':
-                return <EducationEntry content={content} itemId={item.id} />;
+                return <EducationEntry content={content} itemId={item.id} onItemDelete={onItemDelete} sectionId={sectionId} editable={editable} />;
             case 'skills':
-                return <SkillsEntry content={content} />;
+                return <SkillsEntry content={content} itemId={item.id} onItemDelete={onItemDelete} sectionId={sectionId} editable={editable} />;
             case 'summary':
                 return <SummaryEntry content={content} />;
             case 'project':
-                return <ProjectEntry content={content} itemId={item.id} sectionId={sectionId} onBulletEdit={onBulletEdit} editable={editable} highlightedBulletId={highlightedBulletId} />;
+                return <ProjectEntry content={content} itemId={item.id} sectionId={sectionId} onBulletEdit={onBulletEdit} onBulletDelete={onBulletDelete} onBulletAdd={onBulletAdd} onItemDelete={onItemDelete} editable={editable} highlightedBulletId={highlightedBulletId} />;
             case 'custom':
-                return <CustomEntry content={content} itemId={item.id} sectionId={sectionId} onBulletEdit={onBulletEdit} editable={editable} highlightedBulletId={highlightedBulletId} />;
+                return <CustomEntry content={content} itemId={item.id} sectionId={sectionId} onBulletEdit={onBulletEdit} onBulletDelete={onBulletDelete} onBulletAdd={onBulletAdd} onItemDelete={onItemDelete} editable={editable} highlightedBulletId={highlightedBulletId} />;
             default:
                 return null;
         }
@@ -177,11 +234,14 @@ interface ExperienceEntryProps {
     itemId: string;
     sectionId: string;
     onBulletEdit?: (sectionId: string, itemId: string, bulletId: string, newText: string) => void;
+    onBulletDelete?: (sectionId: string, itemId: string, bulletId: string) => void;
+    onBulletAdd?: (sectionId: string, itemId: string) => void;
+    onItemDelete?: (sectionId: string, itemId: string) => void;
     editable: boolean;
     highlightedBulletId?: string | null;
 }
 
-function ExperienceEntry({ content, itemId, sectionId, onBulletEdit, editable, highlightedBulletId }: ExperienceEntryProps) {
+function ExperienceEntry({ content, itemId, sectionId, onBulletEdit, onBulletDelete, onBulletAdd, onItemDelete, editable, highlightedBulletId }: ExperienceEntryProps) {
     const startDate = content.start_date || '';
     const endDate = content.end_date || 'Present';
     const dateRange = startDate ? `${startDate} — ${endDate}` : endDate;
@@ -189,7 +249,18 @@ function ExperienceEntry({ content, itemId, sectionId, onBulletEdit, editable, h
     return (
         <div className={styles.entry}>
             <div className={styles.entryHeader}>
-                <span className={styles.entryTitle}>{content.role}</span>
+                <span className={styles.entryTitle}>
+                    {content.role}
+                    {editable && onItemDelete && (
+                        <button
+                            className={styles.deleteItemBtn}
+                            onClick={() => onItemDelete(sectionId, itemId)}
+                            title="Delete entry"
+                        >
+                            🗑️
+                        </button>
+                    )}
+                </span>
                 <span className={styles.entryDate}>{dateRange}</span>
             </div>
             <div className={styles.entrySubtitle}>
@@ -201,6 +272,8 @@ function ExperienceEntry({ content, itemId, sectionId, onBulletEdit, editable, h
                 sectionId={sectionId}
                 itemId={itemId}
                 onEdit={onBulletEdit}
+                onDelete={onBulletDelete}
+                onAdd={onBulletAdd}
                 editable={editable}
                 highlightedBulletId={highlightedBulletId}
             />
@@ -212,9 +285,12 @@ function ExperienceEntry({ content, itemId, sectionId, onBulletEdit, editable, h
 interface EducationEntryProps {
     content: EducationItem;
     itemId: string;
+    sectionId?: string;
+    onItemDelete?: (sectionId: string, itemId: string) => void;
+    editable?: boolean;
 }
 
-function EducationEntry({ content }: EducationEntryProps) {
+function EducationEntry({ content, itemId, sectionId, onItemDelete, editable }: EducationEntryProps) {
     let degreeLine = content.degree;
     if (content.field) {
         degreeLine += ` in ${content.field}`;
@@ -222,12 +298,24 @@ function EducationEntry({ content }: EducationEntryProps) {
     if (content.gpa) {
         degreeLine += ` | GPA: ${content.gpa}`;
     }
+    const dateRange = content.end_date || '';
 
     return (
         <div className={styles.entry}>
             <div className={styles.entryHeader}>
-                <span className={styles.entryTitle}>{content.institution}</span>
-                <span className={styles.entryDate}>{content.end_date}</span>
+                <span className={styles.entryTitle}>
+                    {content.institution}
+                    {editable && onItemDelete && sectionId && (
+                        <button
+                            className={styles.deleteItemBtn}
+                            onClick={() => onItemDelete(sectionId, itemId)}
+                            title="Delete entry"
+                        >
+                            🗑️
+                        </button>
+                    )}
+                </span>
+                <span className={styles.entryDate}>{dateRange}</span>
             </div>
             <div className={styles.entrySubtitle}>
                 <span>{degreeLine}</span>
@@ -240,15 +328,36 @@ function EducationEntry({ content }: EducationEntryProps) {
 // Skills Entry
 interface SkillsEntryProps {
     content: SkillsItem;
+    itemId: string;
+    sectionId?: string;
+    onItemDelete?: (sectionId: string, itemId: string) => void;
+    editable?: boolean;
 }
 
-function SkillsEntry({ content }: SkillsEntryProps) {
+function SkillsEntry({ content, itemId, sectionId, onItemDelete, editable }: SkillsEntryProps) {
+    const categories = content.categories || [];
     return (
-        <div className={styles.skillsContainer}>
-            {content.categories.map((category, index) => (
-                <div key={index} className={styles.skillCategory}>
-                    <span className={styles.skillCategoryName}>{category.name}:</span>
-                    <span className={styles.skillList}>{category.skills.join(', ')}</span>
+        <div className={styles.skillsList}>
+            {categories.map((cat, i) => (
+                <div key={i} className={styles.skillsItem}>
+                    <span className={styles.skillCategory}>
+                        {cat.name}:
+                        {i === 0 && editable && onItemDelete && sectionId && (
+                            <button
+                                className={styles.deleteItemBtn}
+                                onClick={() => onItemDelete(sectionId, itemId)}
+                                title="Delete entry"
+                            >
+                                🗑️
+                            </button>
+                        )}
+                    </span>
+                    <span className={styles.skillsText}>{cat.skills.map((s, idx) => (
+                        <span key={idx}>
+                            {renderWithMarkdown(s)}
+                            {idx < cat.skills.length - 1 ? ', ' : ''}
+                        </span>
+                    ))}</span>
                 </div>
             ))}
         </div>
@@ -270,26 +379,41 @@ interface ProjectEntryProps {
     itemId: string;
     sectionId: string;
     onBulletEdit?: (sectionId: string, itemId: string, bulletId: string, newText: string) => void;
+    onBulletDelete?: (sectionId: string, itemId: string, bulletId: string) => void;
+    onBulletAdd?: (sectionId: string, itemId: string) => void;
+    onItemDelete?: (sectionId: string, itemId: string) => void;
     editable: boolean;
     highlightedBulletId?: string | null;
 }
 
-function ProjectEntry({ content, itemId, sectionId, onBulletEdit, editable, highlightedBulletId }: ProjectEntryProps) {
+function ProjectEntry({ content, itemId, sectionId, onBulletEdit, onBulletDelete, onBulletAdd, onItemDelete, editable, highlightedBulletId }: ProjectEntryProps) {
+    const techs = content.technologies || [];
+
     return (
         <div className={styles.entry}>
             <div className={styles.entryHeader}>
                 <span className={styles.entryTitle}>
                     {content.name}
-                    {content.technologies && content.technologies.length > 0 && (
-                        <span className={styles.technologies}> ({content.technologies.join(', ')})</span>
+                    {techs.length > 0 && <span className={styles.technologies}> ({techs.join(', ')})</span>}
+                    {editable && onItemDelete && (
+                        <button
+                            className={styles.deleteItemBtn}
+                            onClick={() => onItemDelete(sectionId, itemId)}
+                            title="Delete entry"
+                        >
+                            🗑️
+                        </button>
                     )}
                 </span>
             </div>
+            {content.description && <p className={styles.descriptionText}>{content.description}</p>}
             <BulletList
                 bullets={content.bullets}
                 sectionId={sectionId}
                 itemId={itemId}
                 onEdit={onBulletEdit}
+                onDelete={onBulletDelete}
+                onAdd={onBulletAdd}
                 editable={editable}
                 highlightedBulletId={highlightedBulletId}
             />
@@ -303,23 +427,40 @@ interface CustomEntryProps {
     itemId: string;
     sectionId: string;
     onBulletEdit?: (sectionId: string, itemId: string, bulletId: string, newText: string) => void;
+    onBulletDelete?: (sectionId: string, itemId: string, bulletId: string) => void;
+    onBulletAdd?: (sectionId: string, itemId: string) => void;
+    onItemDelete?: (sectionId: string, itemId: string) => void;
     editable: boolean;
     highlightedBulletId?: string | null;
 }
 
-function CustomEntry({ content, itemId, sectionId, onBulletEdit, editable, highlightedBulletId }: CustomEntryProps) {
+function CustomEntry({ content, itemId, sectionId, onBulletEdit, onBulletDelete, onBulletAdd, onItemDelete, editable, highlightedBulletId }: CustomEntryProps) {
     return (
         <div className={styles.entry}>
             {content.title && (
                 <div className={styles.entryHeader}>
-                    <span className={styles.entryTitle}>{content.title}</span>
+                    <span className={styles.entryTitle}>
+                        {content.title}
+                        {editable && onItemDelete && (
+                            <button
+                                className={styles.deleteItemBtn}
+                                onClick={() => onItemDelete(sectionId, itemId)}
+                                title="Delete entry"
+                            >
+                                🗑️
+                            </button>
+                        )}
+                    </span>
                 </div>
             )}
+            {(content.text || content.description) && <p className={styles.descriptionText}>{content.text || content.description}</p>}
             <BulletList
                 bullets={content.bullets}
                 sectionId={sectionId}
                 itemId={itemId}
                 onEdit={onBulletEdit}
+                onDelete={onBulletDelete}
+                onAdd={onBulletAdd}
                 editable={editable}
                 highlightedBulletId={highlightedBulletId}
             />
@@ -329,18 +470,24 @@ function CustomEntry({ content, itemId, sectionId, onBulletEdit, editable, highl
 
 // Bullet List Component
 interface BulletListProps {
-    bullets: { id: string; text: string; order: number }[];
+    bullets?: { id: string; text: string; order: number }[];
     sectionId: string;
     itemId: string;
     onEdit?: (sectionId: string, itemId: string, bulletId: string, newText: string) => void;
+    onDelete?: (sectionId: string, itemId: string, bulletId: string) => void;
+    onAdd?: (sectionId: string, itemId: string) => void;
     editable: boolean;
     highlightedBulletId?: string | null;
 }
 
-function BulletList({ bullets, sectionId, itemId, onEdit, editable, highlightedBulletId }: BulletListProps) {
-    if (!bullets || bullets.length === 0) return null;
+function BulletList({ bullets, sectionId, itemId, onEdit, onDelete, onAdd, editable, highlightedBulletId }: BulletListProps) {
+    // If editable, we show the list even if empty (to show Add button)
+    if ((!bullets || bullets.length === 0) && !editable) return null;
 
-    const handleBulletEdit = (bulletId: string) => (e: React.FocusEvent<HTMLLIElement>) => {
+    // Ensure bullets is an array
+    const safeBullets = bullets || [];
+
+    const handleBulletEdit = (bulletId: string) => (e: React.FocusEvent<HTMLSpanElement>) => {
         if (onEdit && e.target.textContent !== null) {
             onEdit(sectionId, itemId, bulletId, e.target.textContent);
         }
@@ -360,7 +507,7 @@ function BulletList({ bullets, sectionId, itemId, onEdit, editable, highlightedB
 
     return (
         <ul className={styles.bulletList}>
-            {bullets
+            {safeBullets
                 .sort((a, b) => a.order - b.order)
                 .map(bullet => {
                     const isHighlighted = highlightedBulletId === bullet.id;
@@ -368,14 +515,37 @@ function BulletList({ bullets, sectionId, itemId, onEdit, editable, highlightedB
                         <li
                             key={bullet.id}
                             className={`${styles.bulletItem} ${isHighlighted ? styles.highlightedBullet : ''}`}
-                            contentEditable={editable}
-                            suppressContentEditableWarning
-                            onBlur={handleBulletEdit(bullet.id)}
                         >
-                            {renderWithMarkdown(bullet.text)}
+                            <span
+                                contentEditable={editable}
+                                suppressContentEditableWarning
+                                onBlur={handleBulletEdit(bullet.id)}
+                            >
+                                {renderWithMarkdown(bullet.text)}
+                            </span>
+                            {editable && onDelete && (
+                                <button
+                                    className={styles.deleteBulletBtn}
+                                    onClick={() => onDelete(sectionId, itemId, bullet.id)}
+                                    title="Delete bullet"
+                                >
+                                    🗑️
+                                </button>
+                            )}
                         </li>
                     );
                 })}
+            {editable && onAdd && (
+                <li className={styles.addBulletItem}>
+                    <button
+                        className={styles.addBulletBtn}
+                        onClick={() => onAdd(sectionId, itemId)}
+                        title="Add bullet"
+                    >
+                        + Add Bullet
+                    </button>
+                </li>
+            )}
         </ul>
     );
 }

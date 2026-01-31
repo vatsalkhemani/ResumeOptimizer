@@ -63,6 +63,15 @@
     align-items: center;
 }
 
+.contactItem a {
+    color: #2563eb;
+    text-decoration: none;
+}
+
+.contactItem a:hover {
+    text-decoration: underline;
+}
+
 .separator {
     margin: 0 4px;
     color: #999;
@@ -114,7 +123,7 @@
 .entryTitle {
     font-family: 'Merriweather', serif;
     /* Role / Title in Serif */
-    font-weight: 700;
+    font-weight: 900;
     font-size: 11pt;
     color: #000;
 }
@@ -244,4 +253,118 @@
     }
 
     /* Hide UI elements if any pollute the print view */
+    .deleteItemBtn,
+    .deleteBulletBtn {
+        display: none !important;
+    }
+}
+
+/* Delete Actions */
+.deleteItemBtn,
+.deleteBulletBtn {
+    opacity: 0;
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: #ef4444;
+    transition: opacity 0.2s;
+    border-radius: 4px;
+}
+
+.deleteItemBtn:hover,
+.deleteBulletBtn:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+}
+
+.entry:hover .deleteItemBtn,
+.bulletItem:hover .deleteBulletBtn {
+    opacity: 1;
+}
+
+.deleteItemBtn {
+    margin-left: 8px;
+    font-size: 16px;
+    vertical-align: middle;
+    padding: 2px 4px;
+}
+
+.deleteBulletBtn {
+    position: absolute;
+    /* Position outside the flow */
+    left: -20px;
+    /* To the left of bullet? or right? */
+    top: 0;
+    font-size: 16px;
+    padding: 0 4px;
+}
+
+.addBulletItem {
+    list-style: none;
+    margin-top: 4px;
+    margin-left: -4px;
+    /* Align with text */
+}
+
+.addBulletBtn {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px dashed #3b82f6;
+    color: #3b82f6;
+    border-radius: 4px;
+    width: 100%;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.2s;
+    opacity: 0.8;
+}
+
+.addBulletBtn:hover {
+    background: rgba(59, 130, 246, 0.2);
+    opacity: 1;
+}
+
+.deleteSectionBtn {
+    margin-left: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.section:hover .deleteSectionBtn {
+    opacity: 1;
+}
+
+/* Force Bold */
+.resume strong,
+.resume b {
+    font-weight: 900;
+    color: #000;
+}
+
+/* Description Text (Project/Custom) */
+.descriptionText {
+    font-size: 10pt;
+    line-height: 1.5;
+    color: #333;
+    margin: 2px 0 4px 0;
+}
+
+.deleteSectionBtn:hover {
+    transform: scale(1.1);
+}
+
+/* Move bullet button to right to avoid bullet marker conflict */
+.deleteBulletBtn {
+    left: auto;
+    right: -20px;
+}
+
+.bulletItem {
+    position: relative;
 }

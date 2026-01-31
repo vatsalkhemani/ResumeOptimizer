@@ -6,7 +6,7 @@
  * - Export PDF: Send Resume model → get PDF blob (for download)
  * - Preview: Rendered directly in frontend (no API call needed)
  */
-import { Resume, ParseResponse, AnalysisResult } from './types';
+import { Resume, ParseResponse, AnalysisResult, CustomEditRequest, CustomEditResponse } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -63,6 +63,26 @@ class ApiClient {
     }
 
     /**
+     * Custom edit - send current text and user instruction, get AI-edited text
+     */
+    async customEdit(request: CustomEditRequest): Promise<CustomEditResponse> {
+        const response = await fetch(`${this.baseUrl}/api/custom-edit`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(request),
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+            throw new Error(error.detail || 'Failed to process custom edit');
+        }
+
+        return response.json();
+    }
+
+    /**
      * Export resume to PDF
      * Returns the PDF as a Blob for download
      */
@@ -93,3 +113,4 @@ class ApiClient {
 }
 
 export const api = new ApiClient(API_BASE);
+

@@ -74,12 +74,15 @@ export interface ProjectItem {
 }
 
 // Custom item
+// Custom item
 export interface CustomItem {
     type: 'custom';
     title?: string;
     subtitle?: string;
     date_range?: string;
     location?: string;
+    text?: string;
+    description?: string;
     bullets: Bullet[];
 }
 
@@ -142,12 +145,14 @@ export interface RenderResponse {
 
 // Analysis Types
 export type SuggestionType = 'critical' | 'enhancement';
-export type SuggestionAction = 'rewrite' | 'add' | 'delete' | 'remove';
+export type SuggestionAction = 'rewrite' | 'add' | 'delete' | 'remove' | 'format';
+export type SuggestionCategory = 'content' | 'formatting';
 
 export interface Suggestion {
     id: string;
     type: SuggestionType;
     action: SuggestionAction;
+    category: SuggestionCategory;
     section_id?: string;
     item_id?: string;
     bullet_id?: string;
@@ -164,18 +169,20 @@ export interface Suggestion {
     isDismissed?: boolean;
 }
 
-export interface AnalysisResult {
-    score: number;
-    summary: string;
-    suggestions: Suggestion[];
-}
-
-// Job Description (for Phase 2)
 export interface Keyword {
     term: string;
-    frequency: number;
-    category: 'skill' | 'methodology' | 'tool' | 'soft_skill';
-    foundInResume: boolean;
+    category: 'skill' | 'tool' | 'certification' | 'soft_skill' | 'other';
+    found: boolean;
+    importance?: string;
+    context?: string;
+}
+
+export interface AnalysisResult {
+    score: number;
+    match_score?: number;
+    summary: string;
+    suggestions: Suggestion[];
+    keywords: Keyword[];
 }
 
 export interface JobDescription {
@@ -187,4 +194,24 @@ export interface JobDescription {
     requiredSkills: string[];
     preferredSkills: string[];
     responsibilities: string[];
+}
+
+// Custom Edit Types
+export interface CustomEditRequest {
+    current_text: string;
+    prompt: string;
+    section_id?: string;
+    item_id?: string;
+    bullet_id?: string;
+    section_type?: string;
+    job_description?: string;
+}
+
+export interface CustomEditResponse {
+    suggested_text: string;
+    explanation: string;
+    action: SuggestionAction;
+    section_id?: string;
+    item_id?: string;
+    bullet_id?: string;
 }

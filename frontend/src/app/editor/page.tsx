@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import styles from './page.module.css';
@@ -13,7 +13,6 @@ export default function EditorPage() {
     const {
         resume,
         suggestions,
-        score,
         jobDescription,
         activeSuggestionIndex,
         setSuggestions,
@@ -24,27 +23,47 @@ export default function EditorPage() {
         dismissSuggestion,
         nextSuggestion,
         setActiveSuggestionIndex,
-        reorderSections
+        reorderSections,
+        setJobDescription,
+        removeBullet,
+        removeSectionItem,
+        addBullet,
+        removeSection
     } = useDocumentStore();
 
     const [isExporting, setIsExporting] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [customPrompt, setCustomPrompt] = useState('');
     const [expandedSection, setExpandedSection] = useState<string | null>('experience');
+    const [categoryFilter, setCategoryFilter] = useState<'content' | 'formatting'>('content');
     const [draggedSectionId, setDraggedSectionId] = useState<string | null>(null);
+    const [zoom, setZoom] = useState(0.8);
 
-    // Get active (not processed) suggestions
+    // Get active (not processed) suggestions filtered by category
     const activeSuggestions = useMemo(() =>
-        suggestions.filter(s => !s.isAccepted && !s.isDismissed),
-        [suggestions]
+        suggestions.filter(s =>
+            !s.isAccepted &&
+            !s.isDismissed &&
+            (s.category || 'content') === categoryFilter
+        ),
+        [suggestions, categoryFilter]
     );
 
     // Current suggestion being shown
     const currentSuggestion = activeSuggestions[activeSuggestionIndex] || null;
 
-    // Run Analysis on Mount
+    const hasAnalyzed = useRef(false);
+
+    // Reset index if it goes out of bounds
     useEffect(() => {
-        if (resume && suggestions.length === 0 && !isAnalyzing) {
+        if (activeSuggestionIndex >= activeSuggestions.length && activeSuggestions.length > 0) {
+            setActiveSuggestionIndex(activeSuggestions.length - 1);
+        }
+    }, [activeSuggestions.length, activeSuggestionIndex, setActiveSuggestionIndex]);
+
+    // Run Analysis on Mount (only once)
+    useEffect(() => {
+        if (resume && suggestions.length === 0 && !isAnalyzing && !hasAnalyzed.current) {
+            hasAnalyzed.current = true;
             runAnalysis();
         }
     }, [resume]);
@@ -78,13 +97,17 @@ export default function EditorPage() {
         dismissSuggestion(currentSuggestion.id);
     };
 
-    // Handle custom prompt submit
-    const handleCustomPrompt = async () => {
-        if (!customPrompt.trim() || !resume) return;
-        // TODO: Implement custom AI edit
-        console.log("Custom prompt:", customPrompt);
-        setCustomPrompt('');
-    };
+    // Handle new bullet
+    const handleAddBullet = useCallback((sectionId: string, itemId: string) => {
+        addBullet(sectionId, itemId, "New bullet point");
+    }, [addBullet]);
+
+    // Handle section delete
+    const handleSectionDelete = useCallback((sectionId: string) => {
+        if (confirm('Are you sure you want to delete this section?')) {
+            removeSection(sectionId);
+        }
+    }, [removeSection]);
 
     // Export to PDF
     const handleExportPdf = async () => {
@@ -147,6 +170,14 @@ export default function EditorPage() {
     // Section list for manager (sorted by order)
     const sections = resume?.sections ? [...resume.sections].sort((a, b) => a.order - b.order) : [];
 
+    const handleMetadataEdit = useCallback((field: string, value: string) => {
+        updateMetadata(field, value);
+    }, [updateMetadata]);
+
+    const handleBulletEdit = useCallback((sectionId: string, itemId: string, bulletId: string, text: string) => {
+        updateBullet(sectionId, itemId, bulletId, text);
+    }, [updateBullet]);
+
 
 
     if (!resume) {
@@ -169,6 +200,11 @@ export default function EditorPage() {
                     </div>
                 </div>
                 <div className={styles.actions}>
+                    <div className={styles.zoomControls}>
+                        <button onClick={() => setZoom(z => Math.max(0.4, z - 0.1))} className={styles.zoomBtn}>-</button>
+                        <span className={styles.zoomLabel}>{Math.round(zoom * 100)}%</span>
+                        <button onClick={() => setZoom(z => Math.min(1.5, z + 0.1))} className={styles.zoomBtn}>+</button>
+                    </div>
                     <button
                         className={styles.exportButton}
                         onClick={handleExportPdf}
@@ -181,27 +217,74 @@ export default function EditorPage() {
 
             {/* Main Content */}
             <main className={styles.mainArea}>
-                {/* Document Preview */}
-                <section className={styles.previewPane}>
-                    <ResumePreview
-                        resume={resume}
-                        highlightedBulletId={highlightedBulletId}
-                        highlightedItemId={highlightedItemId}
-                    />
-                </section>
-
+                <div className={styles.previewPane}>
+                    <div className={styles.resumeScaler} style={{ zoom: zoom }}>
+                        <ResumePreview
+                            resume={resume}
+                            onMetadataEdit={handleMetadataEdit}
+                            onBulletEdit={handleBulletEdit}
+                            onBulletDelete={removeBullet}
+                            onBulletAdd={handleAddBullet}
+                            onItemDelete={removeSectionItem}
+                            onSectionDelete={handleSectionDelete}
+                            editable={true}
+                            highlightedBulletId={currentSuggestion?.bullet_id}
+                            highlightedItemId={currentSuggestion?.item_id}
+                        />
+                    </div>
+                </div>
                 {/* Right Sidebar */}
                 <aside className={styles.sidebar}>
                     {/* Suggestion Panel */}
                     <div className={styles.suggestionPanel}>
                         <div className={styles.panelHeader}>
                             <span className={styles.panelLabel}>SUGGESTION</span>
-                            <span className={styles.suggestionCount}>
-                                {activeSuggestions.length > 0
-                                    ? `${activeSuggestionIndex + 1} of ${activeSuggestions.length}`
-                                    : '—'
-                                }
-                            </span>
+                            <div className={styles.suggestionNav}>
+                                <button
+                                    className={styles.navArrow}
+                                    onClick={() => setActiveSuggestionIndex(
+                                        activeSuggestionIndex > 0
+                                            ? activeSuggestionIndex - 1
+                                            : activeSuggestions.length - 1
+                                    )}
+                                    disabled={activeSuggestions.length <= 1}
+                                >
+                                    ←
+                                </button>
+                                <span className={styles.suggestionCount}>
+                                    {activeSuggestions.length > 0
+                                        ? `${activeSuggestionIndex + 1} / ${activeSuggestions.length}`
+                                        : 'None'
+                                    }
+                                </span>
+                                <button
+                                    className={styles.navArrow}
+                                    onClick={() => setActiveSuggestionIndex(
+                                        activeSuggestionIndex < activeSuggestions.length - 1
+                                            ? activeSuggestionIndex + 1
+                                            : 0
+                                    )}
+                                    disabled={activeSuggestions.length <= 1}
+                                >
+                                    →
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Category Toggle */}
+                        <div className={styles.categoryToggle}>
+                            <button
+                                className={`${styles.categoryBtn} ${categoryFilter === 'content' ? styles.activeCategory : ''}`}
+                                onClick={() => { setCategoryFilter('content'); setActiveSuggestionIndex(0); }}
+                            >
+                                Content
+                            </button>
+                            <button
+                                className={`${styles.categoryBtn} ${categoryFilter === 'formatting' ? styles.activeCategory : ''}`}
+                                onClick={() => { setCategoryFilter('formatting'); setActiveSuggestionIndex(0); }}
+                            >
+                                Formatting
+                            </button>
                         </div>
 
                         {isAnalyzing ? (
@@ -251,30 +334,11 @@ export default function EditorPage() {
                         ) : (
                             <div className={styles.noSuggestions}>
                                 <p>✓ All suggestions reviewed!</p>
-                                <p className={styles.scoreDisplay}>ATS Score: {score}%</p>
                             </div>
                         )}
-                    </div>
 
-                    {/* Custom Edit Input */}
-                    <div className={styles.customEditSection}>
-                        <label className={styles.sectionLabel}>CUSTOM EDIT</label>
-                        <div className={styles.customEditBox}>
-                            <input
-                                type="text"
-                                placeholder="Reword, add metrics, reorder..."
-                                value={customPrompt}
-                                onChange={(e) => setCustomPrompt(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleCustomPrompt()}
-                            />
-                            <button
-                                className={styles.sendButton}
-                                onClick={handleCustomPrompt}
-                                disabled={!customPrompt.trim()}
-                            >
-                                →
-                            </button>
-                        </div>
+                        {/* Edit via Prompt */}
+
                     </div>
 
                     {/* Section Manager */}
@@ -291,7 +355,13 @@ export default function EditorPage() {
                                     onDragOver={(e) => handleDragOver(e, section.id)}
                                     onDrop={() => handleDrop(section.id)}
                                     onDragEnd={handleDragEnd}
-                                    onClick={() => setExpandedSection(section.type)}
+                                    onClick={() => {
+                                        setExpandedSection(section.type);
+                                        const element = document.getElementById(`section-${section.id}`);
+                                        if (element) {
+                                            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                        }
+                                    }}
                                 >
                                     <span className={styles.dragHandle}>⋮⋮</span>
                                     <span className={styles.sectionTitle}>{section.title}</span>
@@ -302,13 +372,6 @@ export default function EditorPage() {
                     </div>
                 </aside>
             </main>
-
-            {/* Bottom Score Bar */}
-            <footer className={styles.bottomBar}>
-                <div className={styles.scoreIndicator}>
-                    <span className={styles.scoreValue}>{score}%</span>
-                </div>
-            </footer>
-        </div>
+        </div >
     );
 }
