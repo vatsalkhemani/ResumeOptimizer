@@ -6,26 +6,35 @@
 
 - **Resume Optimization**: Tailor your resume to highlight your strengths
 - **ATS Keyword Matching**: Identify and include crucial keywords from job descriptions
-- **AI-Powered Suggestions**: Get intelligent recommendations to improve your resume
-- **Professional PDF Export**: Clean, ATS-friendly LaTeX-rendered output
+- **AI-Powered Suggestions**: 
+  - **Rewording**: Professionalize casual language with one click
+  - **Formatting**: Fix inconsistent dates, caps, and spacing
+- **Smart Bullet Management**: Easily add, remove, or reorder bullet points
+- **Professional PDF Export**: Clean, ATS-friendly PDF output (No LaTeX required)
 - **Live Preview**: See changes in real-time as you accept suggestions
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+
-- Python 3.11+
-- A LaTeX distribution (TeX Live or MiKTeX)
-- OpenAI API key
+- Node.js 18+ (Next.js 16)
+- OpenAI API key (Standard or Azure OpenAI)
 
 ### Setup
 
 1. Clone the repository
-2. Copy `.env.example` to `.env` and add your API keys:
+2. Copy `.env.example` to `.env` and configure your API keys:
    ```bash
    cp .env.example .env
    ```
+   **Note on API Keys:**
+   You must provide EITHER an `OPENAI_API_KEY` (Standard) OR the following Azure credentials:
+   - `AZURE_OPENAI_API_KEY`
+   - `AZURE_OPENAI_ENDPOINT`
+   - `AZURE_OPENAI_API_VERSION`
+   - `AZURE_OPENAI_DEPLOYMENT_NAME`
+   
+   ⚠️ **Important:** Your `.env` file is automatically ignored by git to protect your keys. Never remove it from `.gitignore`.
 3. Install dependencies:
    ```bash
    # Frontend

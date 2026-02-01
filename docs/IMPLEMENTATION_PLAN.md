@@ -209,10 +209,12 @@ interface CustomItem {
 
 | Technology | Purpose | Rationale |
 |------------|---------|-----------|
-| **Next.js 14** | Framework | App Router, TypeScript support |
+| **Next.js 16** | Framework | App Router, TypeScript support, Server Actions |
+| **React 19** | Library | Latest React features |
 | **TypeScript** | Type safety | Complex data models |
 | **Zustand** | State management | Simple, powerful, undo/redo |
 | **CSS Modules** | Styling | Scoped styles, premium aesthetic |
+| **Framer Motion** | Animations | Smooth UI transitions |
 | **ResumePreview** | Live preview | React component, instant updates |
 
 ### Backend
@@ -221,7 +223,7 @@ interface CustomItem {
 |------------|---------|-----------|
 | **Python + FastAPI** | API server | Best for document parsing & AI |
 | **PyMuPDF (fitz)** | PDF Text Extraction | Extract raw text for AI processing |
-| **OpenAI GPT-4o** | Resume Parsing | 100% accurate structural extraction |
+| **Azure / OpenAI GPT-4o**| Resume Parsing | 100% accurate structural extraction |
 | **ReportLab** | PDF generation | Pure Python, no external deps |
 | **OpenAI API** | AI suggestions | GPT-4o for text improvement |
 
@@ -354,7 +356,7 @@ ResumeOptimizer/
 **All Core Features Complete.** (Last updated: 2026-02-01)
 
 ### What's Working:
-- ✅ AI-powered resume parsing (GPT-4o)
+- ✅ AI-powered resume parsing (GPT-4o via Azure or Standard OpenAI)
 - ✅ Live preview editor with inline editing
 - ✅ AI suggestions with Accept/Dismiss
 - ✅ Job description keyword matching
@@ -366,7 +368,7 @@ ResumeOptimizer/
 
 ### Key Decisions Made:
 1. **Frontend Rendering** - Preview renders in React (no backend HTML)
-2. **Azure OpenAI** - Using Azure OpenAI for analysis
+2. **Hybrid AI Support** - Supports both Azure OpenAI and Standard OpenAI
 3. **Suggestion Categories** - Split into content vs formatting
 
 ### Next Steps (Optional Polish):
