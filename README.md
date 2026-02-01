@@ -13,6 +13,16 @@
 - **Professional PDF Export**: Clean, ATS-friendly PDF output (No LaTeX required)
 - **Live Preview**: See changes in real-time as you accept suggestions
 
+## Screenshots
+
+<div align="center">
+  <img src="./docs/screenshots/upload_screen.png" alt="Upload and Analysis Screen" width="800"/>
+  <p><em>Streamlined Upload & Job Description Analysis</em></p>
+  <br/>
+  <img src="./docs/screenshots/editor_preview.png" alt="Live Resume Editor" width="800"/>
+  <p><em>Real-time Editor with AI Suggestions</em></p>
+</div>
+
 ## Getting Started
 
 ### Prerequisites
