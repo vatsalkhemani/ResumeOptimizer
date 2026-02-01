@@ -212,16 +212,18 @@
     color: #555;
 }
 
-.bulletItem:focus {
-    outline: 2px solid #3b82f6;
-    background: rgba(59, 130, 246, 0.05);
+.bulletItem:focus-within {
+    outline: none;
+    background: rgba(212, 175, 55, 0.1);
     border-radius: 2px;
+    box-shadow: -3px 0 0 0 var(--accent-primary);
+    /* Left border effect */
 }
 
 /* Highlighted bullet (active suggestion) */
 .highlightedBullet {
-    background-color: rgba(251, 191, 36, 0.3) !important;
-    border-left: 3px solid #fbbf24;
+    background-color: rgba(212, 175, 55, 0.2) !important;
+    border-left: 3px solid var(--accent-primary);
     padding-left: 6px;
     margin-left: -9px;
     border-radius: 2px;
@@ -230,8 +232,8 @@
 
 /* Highlighted item (for ADD suggestions) */
 .highlightedItem {
-    background-color: rgba(59, 130, 246, 0.1);
-    border-left: 3px solid #3b82f6;
+    background-color: rgba(212, 175, 55, 0.1);
+    border-left: 3px solid var(--accent-primary);
     padding-left: 8px;
     margin-left: -11px;
     border-radius: 4px;
@@ -408,4 +410,13 @@
 .skillsItem {
     line-height: 1.5;
     margin-bottom: 4px;
+    padding-left: 4px;
+    margin-left: -4px;
+    transition: background-color 0.2s;
+}
+
+.skillsItem:focus-within {
+    background: rgba(212, 175, 55, 0.1);
+    border-radius: 2px;
+    box-shadow: -3px 0 0 0 var(--accent-primary);
 }

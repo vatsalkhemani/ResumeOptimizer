@@ -37,7 +37,7 @@ export default function UploadPage() {
       setFile(droppedFile);
       setError(null);
     } else {
-      setError('Please upload a PDF or DOCX file');
+      setError('Please upload a PDF file');
     }
   }, []);
 
@@ -47,13 +47,13 @@ export default function UploadPage() {
       setFile(selectedFile);
       setError(null);
     } else if (selectedFile) {
-      setError('Please upload a PDF or DOCX file');
+      setError('Please upload a PDF file');
     }
   }, []);
 
   const isValidFile = (file: File): boolean => {
-    const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    const validExtensions = ['.pdf', '.docx'];
+    const validTypes = ['application/pdf'];
+    const validExtensions = ['.pdf'];
 
     return validTypes.includes(file.type) ||
       validExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
@@ -117,10 +117,9 @@ export default function UploadPage() {
 
       {/* Header */}
       <header className={styles.header}>
-        <h1 className={styles.title}>Let&apos;s tailor your profile</h1>
+        <h1 className={styles.title}>Resume Optimizer</h1>
         <p className={styles.subtitle}>
-          Upload your current resume and the job description you are targeting.
-          Our AI will analyze the gap.
+          Let your resume showcase your true fit. Let our AI enhance your resume.
         </p>
       </header>
 
@@ -137,7 +136,7 @@ export default function UploadPage() {
         <section className={styles.uploadSection}>
           <div className={styles.sectionHeader}>
             <span className={styles.sectionTitle}>Your Resume</span>
-            <span className={styles.sectionBadge}>PDF or DOCX</span>
+            <span className={styles.sectionBadge}>PDF</span>
           </div>
 
           {!file ? (
@@ -159,12 +158,11 @@ export default function UploadPage() {
               <p className={styles.dropzoneSubtext}>or click to browse files from your computer</p>
               <div className={styles.fileTypes}>
                 <span className={styles.fileType}>📄 PDF</span>
-                <span className={styles.fileType}>📝 DOCX</span>
               </div>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                accept=".pdf,application/pdf"
                 onChange={handleFileSelect}
                 style={{ display: 'none' }}
               />

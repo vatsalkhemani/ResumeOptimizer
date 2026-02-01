@@ -636,17 +636,7 @@ function BulletList({ bullets, sectionId, itemId, onEdit, onDelete, onAdd, edita
                         </li>
                     );
                 })}
-            {editable && onAdd && (
-                <li className={styles.addBulletItem}>
-                    <button
-                        className={styles.addBulletBtn}
-                        onClick={() => onAdd(sectionId, itemId)}
-                        title="Add bullet"
-                    >
-                        + Add Bullet
-                    </button>
-                </li>
-            )}
+
         </ul>
     );
 }
