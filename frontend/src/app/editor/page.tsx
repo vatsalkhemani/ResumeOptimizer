@@ -28,7 +28,9 @@ export default function EditorPage() {
         removeBullet,
         removeSectionItem,
         addBullet,
-        removeSection
+        removeSection,
+        addSectionItem,
+        updateSkillCategory
     } = useDocumentStore();
 
     const [isExporting, setIsExporting] = useState(false);
@@ -178,6 +180,10 @@ export default function EditorPage() {
         updateBullet(sectionId, itemId, bulletId, text);
     }, [updateBullet]);
 
+    const handleSkillCategoryUpdate = useCallback((sectionId: string, itemId: string, categoryIndex: number, field: 'name' | 'skills', value: string | string[]) => {
+        updateSkillCategory(sectionId, itemId, categoryIndex, field, value);
+    }, [updateSkillCategory]);
+
 
 
     if (!resume) {
@@ -226,7 +232,9 @@ export default function EditorPage() {
                             onBulletDelete={removeBullet}
                             onBulletAdd={handleAddBullet}
                             onItemDelete={removeSectionItem}
+                            onSectionItemAdd={addSectionItem}
                             onSectionDelete={handleSectionDelete}
+                            onSkillCategoryUpdate={handleSkillCategoryUpdate}
                             editable={true}
                             highlightedBulletId={currentSuggestion?.bullet_id}
                             highlightedItemId={currentSuggestion?.item_id}

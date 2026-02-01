@@ -2,7 +2,7 @@
 Resume data models using Pydantic
 """
 from pydantic import BaseModel, Field
-from typing import Optional, Union
+from typing import Optional, Union, Literal
 from datetime import datetime
 from enum import Enum
 import uuid
@@ -31,7 +31,7 @@ class SkillCategory(BaseModel):
 
 
 class ExperienceItem(BaseModel):
-    type: str = "experience"
+    type: Literal["experience"] = "experience"
     company: str
     role: str
     location: Optional[str] = None
@@ -41,7 +41,7 @@ class ExperienceItem(BaseModel):
 
 
 class EducationItem(BaseModel):
-    type: str = "education"
+    type: Literal["education"] = "education"
     institution: str
     degree: str
     field: Optional[str] = None
@@ -53,26 +53,26 @@ class EducationItem(BaseModel):
 
 
 class SkillsItem(BaseModel):
-    type: str = "skills"
+    type: Literal["skills"] = "skills"
     categories: list[SkillCategory] = []
 
 
 class SummaryItem(BaseModel):
-    type: str = "summary"
+    type: Literal["summary"] = "summary"
     text: str
 
 
 class ProjectItem(BaseModel):
-    type: str = "project"
+    type: Literal["project"] = "project"
     name: str
     description: Optional[str] = None
-    technologies: Optional[list[str]] = None
+    technologies: Optional[Union[list[str], str]] = None
     url: Optional[str] = None
     bullets: list[Bullet] = []
 
 
 class CustomItem(BaseModel):
-    type: str = "custom"
+    type: Literal["custom"] = "custom"
     title: Optional[str] = None
     subtitle: Optional[str] = None
     date_range: Optional[str] = None
@@ -94,7 +94,7 @@ ItemContent = Union[
 class SectionItem(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     order: int
-    content: ItemContent
+    content: ItemContent = Field(..., discriminator='type')
 
 
 class ResumeSection(BaseModel):

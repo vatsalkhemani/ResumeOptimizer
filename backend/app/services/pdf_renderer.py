@@ -35,7 +35,8 @@ class PDFRenderer:
             alignment=TA_CENTER,
             spaceAfter=12,
             textColor=HexColor('#111111'),
-            leading=28
+            leading=28,
+            textTransform='uppercase'
         ))
         
         # Contact style (Open Sans 9pt -> Helvetica 9)
@@ -103,7 +104,7 @@ class PDFRenderer:
             leftIndent=12,
             spaceAfter=3,
             textColor=HexColor('#1a1a1a'),
-            leading=15 
+            leading=13 
         ))
         
         # Summary text
@@ -135,10 +136,10 @@ class PDFRenderer:
         doc = SimpleDocTemplate(
             buffer,
             pagesize=letter,
-            leftMargin=0.6*inch,
-            rightMargin=0.6*inch,
-            topMargin=0.5*inch,
-            bottomMargin=0.5*inch
+            leftMargin=0.75*inch,
+            rightMargin=0.75*inch,
+            topMargin=0.75*inch,
+            bottomMargin=0.75*inch
         )
         
         story = []
@@ -162,6 +163,9 @@ class PDFRenderer:
         """Escape text for ReportLab paragraphs"""
         if not text:
             return ""
+        return (str(text)
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
             .replace(">", "&gt;"))
 
     def _parse_markdown(self, text):
@@ -234,6 +238,9 @@ class PDFRenderer:
         
         # Section items
         items = self._get_attr(section, 'items', [])
+        print(f"DEBUG: Processing Section '{self._get_attr(section, 'title', 'UNKNOWN')}'")
+        print(f"DEBUG: Item Count: {len(items)}")
+        
         sorted_items = sorted(items, key=lambda i: self._get_attr(i, 'order', 0))
         for item in sorted_items:
             elements.extend(self._build_item(item))
@@ -244,6 +251,7 @@ class PDFRenderer:
         """Build a section item based on its type"""
         content = self._get_attr(item, 'content', item)
         item_type = self._get_attr(content, 'type', 'custom')
+        print(f"DEBUG: Building Item Type: {item_type}, Content: {content}")
         
         if item_type == 'experience':
             return self._build_experience_item(content)
@@ -262,9 +270,9 @@ class PDFRenderer:
         """Build an experience entry"""
         elements = []
         
-        role = self._escape(self._get_attr(item, 'role', ''))
-        start_date = self._escape(self._get_attr(item, 'start_date', ''))
-        end_date = self._escape(self._get_attr(item, 'end_date', '') or 'Present')
+        role = self._parse_markdown(self._get_attr(item, 'role', ''))
+        start_date = self._parse_markdown(self._get_attr(item, 'start_date', ''))
+        end_date = self._parse_markdown(self._get_attr(item, 'end_date', '') or 'Present')
         date_range = f"{start_date} – {end_date}" if start_date else end_date
         
         # Header Row: Role (Left) - Date (Right)
@@ -283,8 +291,8 @@ class PDFRenderer:
         elements.append(t_header)
 
         # Company and location
-        company = self._escape(self._get_attr(item, 'company', ''))
-        location = self._escape(self._get_attr(item, 'location', ''))
+        company = self._parse_markdown(self._get_attr(item, 'company', ''))
+        location = self._parse_markdown(self._get_attr(item, 'location', ''))
         
         if company or location:
             sub_data = [[
@@ -304,7 +312,7 @@ class PDFRenderer:
         # Bullets
         bullets = self._get_attr(item, 'bullets', [])
         for bullet in sorted(bullets, key=lambda b: self._get_attr(b, 'order', 0)):
-            text = self._escape(self._get_attr(bullet, 'text', ''))
+            text = self._parse_markdown(self._get_attr(bullet, 'text', ''))
             elements.append(Paragraph(f"•  {text}", self.styles['ResumeBullet']))
         
         elements.append(Spacer(1, 8))
@@ -343,6 +351,13 @@ class PDFRenderer:
         elements.append(Paragraph(degree_text, self.styles['EntrySubtitle']))
         elements.append(Spacer(1, 6))
         
+
+        # Bullets
+        bullets = self._get_attr(item, 'bullets', [])
+        for bullet in sorted(bullets, key=lambda b: self._get_attr(b, 'order', 0)):
+            text = self._parse_markdown(self._get_attr(bullet, 'text', ''))
+            elements.append(Paragraph(f"•  {text}", self.styles['ResumeBullet']))
+            
         return elements
     
     def _build_skills_item(self, item) -> list:
@@ -367,12 +382,15 @@ class PDFRenderer:
         """Build a project entry"""
         elements = []
         
-        name = self._escape(self._get_attr(item, 'name', ''))
+        name = self._parse_markdown(self._get_attr(item, 'name', ''))
         title_text = f"<b>{name}</b>"
         
         technologies = self._get_attr(item, 'technologies', [])
         if technologies:
-            techs = ", ".join([self._escape(t) for t in technologies])
+            if isinstance(technologies, str):
+                techs = self._escape(technologies)
+            else:
+                techs = ", ".join([self._escape(t) for t in technologies])
             title_text += f" <i>({techs})</i>"
         
         elements.append(Paragraph(title_text, self.styles['EntryTitle']))
@@ -391,22 +409,60 @@ class PDFRenderer:
         return elements
     
     def _build_custom_item(self, item) -> list:
-        """Build a custom section item"""
         elements = []
         
         title = self._get_attr(item, 'title', '')
-        if title:
-            elements.append(Paragraph(f"<b>{self._escape(title)}</b>", self.styles['EntryTitle']))
+        subtitle = self._get_attr(item, 'subtitle', '')
+        date_range = self._get_attr(item, 'date_range', '')
+        location = self._get_attr(item, 'location', '')
         
+        # Row 1: Title | Date
+        header_data = [
+            [Paragraph(self._parse_markdown(title), self.styles['EntryTitle']),
+             Paragraph(self._parse_markdown(date_range), self.styles['EntryDate'])]
+        ]
+        t1 = Table(header_data, colWidths=[5.5*inch, 1.5*inch])
+        t1.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+            ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        elements.append(t1)
+        
+        # Row 2: Subtitle | Location (if present)
+        if subtitle or location:
+            sub_data = [
+                [Paragraph(self._parse_markdown(subtitle), self.styles['EntrySubtitle']),
+                 Paragraph(self._parse_markdown(location), self.styles['EntryDate'])] # Recycle EntryDate style for location alignment
+            ]
+            t2 = Table(sub_data, colWidths=[5.5*inch, 1.5*inch])
+            t2.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+                ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                ('TOPPADDING', (0, 0), (-1, -1), 0),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+            ]))
+            elements.append(t2)
+        
+        # Bullets
         bullets = self._get_attr(item, 'bullets', [])
         if bullets:
             for bullet in sorted(bullets, key=lambda b: self._get_attr(b, 'order', 0)):
                 text = self._parse_markdown(self._get_attr(bullet, 'text', ''))
-                elements.append(Paragraph(f"•  {text}", self.styles['ResumeBullet']))
-        else:
-            # Fallback for text-only content (e.g. Leadership text)
-            text = self._parse_markdown(self._get_attr(item, 'text', '') or self._get_attr(item, 'description', ''))
-            if text:
-                 elements.append(Paragraph(text, self.styles['ResumeBullet']))
+                if text:
+                    elements.append(Paragraph(text, self.styles['ResumeBullet'], bulletText='•'))
         
+        # Fallback text description if no bullets
+        text = self._get_attr(item, 'text', '')
+        if text and not bullets:
+             elements.append(Paragraph(self._parse_markdown(text), self.styles['BodyText']))
+             
+        elements.append(Spacer(1, 4))
         return elements

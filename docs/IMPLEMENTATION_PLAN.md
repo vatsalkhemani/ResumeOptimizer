@@ -328,21 +328,49 @@ ResumeOptimizer/
 - [x] **Frontend Rendering** (React components, no HTML middleware)
 - [x] PDF Export (ReportLab matches React design)
 
-### Phase 2: AI Intelligence (Completed)
+### Phase 2: AI Intelligence ✅ (Completed)
 - [x] Implement `analyze.py` to generate real suggestions
 - [x] Connect "Accept" buttons in Sidebar to `updateBullet` state
-- [x] Implement Chat / Rewrite feature (UI ready, API pending)
-- [x] Optimize Prompts for ATS scoring
+- [x] Job Description Analysis & Keyword Matching
+- [x] Match Score display (separate from ATS score)
+- [x] Keywords panel showing matched/missing keywords
+- [x] Content vs Formatting suggestion tabs
+
+### Phase 3: Bug Fixes & Polish ✅ (Completed)
+- [x] Keywords tab error (`matchScore` undefined) - Fixed
+- [x] Arrow navigation for suggestion cycling (← →)
+- [x] Skills section ADD suggestions working
+- [x] Custom AI edit backend (`custom_edit` in analysis.py)
+
+### Remaining Items (Low Priority)
+- [ ] Section reorder drag-and-drop (code exists, needs testing)
+- [ ] Undo/Redo functionality (history/future arrays exist, needs testing)
+- [ ] Edge case handling (empty sections, validation)
 
 ---
 
 
 ## 10. Status Summary
-**Phase 2 Complete.**
-- The system now uses **Azure OpenAI** to analyze the resume against a Job Description.
-- Suggestions are displayed in the "AI Copilot" sidebar.
-- Users can **Accept** suggestions to instantly update the resume content.
-- Formatting, Styling, and Critical issues are categorized.
+**All Core Features Complete.** (Last updated: 2026-02-01)
 
-Next Steps: Polishing & Testing.
+### What's Working:
+- ✅ AI-powered resume parsing (GPT-4o)
+- ✅ Live preview editor with inline editing
+- ✅ AI suggestions with Accept/Dismiss
+- ✅ Job description keyword matching
+- ✅ Match score & keyword visualization
+- ✅ Content/Formatting dual suggestion tabs
+- ✅ Arrow navigation for suggestions
+- ✅ Skills section ADD functionality
+- ✅ PDF export (ReportLab)
+
+### Key Decisions Made:
+1. **Frontend Rendering** - Preview renders in React (no backend HTML)
+2. **Azure OpenAI** - Using Azure OpenAI for analysis
+3. **Suggestion Categories** - Split into content vs formatting
+
+### Next Steps (Optional Polish):
+- Manual testing of section reorder
+- Testing undo/redo functionality
+- Edge case handling
 

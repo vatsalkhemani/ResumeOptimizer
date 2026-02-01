@@ -26,7 +26,9 @@ interface ResumePreviewProps {
     onBulletAdd?: (sectionId: string, itemId: string) => void;
     onItemDelete?: (sectionId: string, itemId: string) => void;
     onSectionDelete?: (sectionId: string) => void;
+    onSectionItemAdd?: (sectionId: string) => void;
     onMetadataEdit?: (field: keyof ResumeMetadata, value: string) => void;
+    onSkillCategoryUpdate?: (sectionId: string, itemId: string, categoryIndex: number, field: 'name' | 'skills', value: string | string[]) => void;
     editable?: boolean;
     highlightedBulletId?: string | null;
     highlightedItemId?: string | null;
@@ -39,7 +41,9 @@ export default function ResumePreview({
     onBulletAdd,
     onItemDelete,
     onSectionDelete,
+    onSectionItemAdd,
     onMetadataEdit,
+    onSkillCategoryUpdate,
     editable = true,
     highlightedBulletId = null,
     highlightedItemId = null
@@ -56,7 +60,10 @@ export default function ResumePreview({
                             section={section}
                             onBulletEdit={onBulletEdit}
                             onBulletDelete={onBulletDelete}
+                            onBulletAdd={onBulletAdd}
                             onItemDelete={onItemDelete}
+                            onSectionItemAdd={onSectionItemAdd}
+                            onSkillCategoryUpdate={onSkillCategoryUpdate}
                             editable={editable}
                             highlightedBulletId={highlightedBulletId}
                             highlightedItemId={highlightedItemId}
@@ -133,26 +140,34 @@ interface SectionProps {
     onBulletAdd?: (sectionId: string, itemId: string) => void;
     onItemDelete?: (sectionId: string, itemId: string) => void;
     onSectionDelete?: (sectionId: string) => void;
+    onSectionItemAdd?: (sectionId: string) => void;
+    onSkillCategoryUpdate?: (sectionId: string, itemId: string, categoryIndex: number, field: 'name' | 'skills', value: string | string[]) => void;
     editable: boolean;
     highlightedBulletId?: string | null;
     highlightedItemId?: string | null;
 }
 
-function Section({ section, onBulletEdit, onBulletDelete, onBulletAdd, onItemDelete, onSectionDelete, editable, highlightedBulletId, highlightedItemId }: SectionProps) {
+function Section({ section, onBulletEdit, onBulletDelete, onBulletAdd, onItemDelete, onSectionDelete, onSectionItemAdd, onSkillCategoryUpdate, editable, highlightedBulletId, highlightedItemId }: SectionProps) {
     return (
         <section id={`section-${section.id}`} className={styles.section}>
-            <h2 className={styles.sectionTitle}>
-                {section.title}
-                {editable && onSectionDelete && (
-                    <button
-                        className={styles.deleteSectionBtn}
-                        onClick={() => onSectionDelete(section.id)}
-                        title="Delete Section"
-                    >
-                        🗑️
-                    </button>
+            <div className={styles.sectionHeaderWrapper}>
+                <h2 className={styles.sectionTitle}>
+                    {section.title}
+                </h2>
+                {editable && (
+                    <div className={styles.sectionActions}>
+                        {onSectionDelete && (
+                            <button
+                                className={styles.deleteSectionBtn}
+                                onClick={() => onSectionDelete(section.id)}
+                                title="Delete Section"
+                            >
+                                🗑️
+                            </button>
+                        )}
+                    </div>
                 )}
-            </h2>
+            </div>
             <div className={styles.sectionContent}>
                 {section.items
                     .sort((a, b) => a.order - b.order)
@@ -165,6 +180,8 @@ function Section({ section, onBulletEdit, onBulletDelete, onBulletAdd, onItemDel
                             onBulletDelete={onBulletDelete}
                             onBulletAdd={onBulletAdd}
                             onItemDelete={onItemDelete}
+                            onSectionItemAdd={onSectionItemAdd}
+                            onSkillCategoryUpdate={onSkillCategoryUpdate}
                             editable={editable}
                             highlightedBulletId={highlightedBulletId}
                             highlightedItemId={highlightedItemId}
@@ -194,13 +211,15 @@ interface SectionItemRendererProps {
     onBulletEdit?: (sectionId: string, itemId: string, bulletId: string, newText: string) => void;
     onBulletDelete?: (sectionId: string, itemId: string, bulletId: string) => void;
     onBulletAdd?: (sectionId: string, itemId: string) => void;
+    onSectionItemAdd?: (sectionId: string) => void;
     onItemDelete?: (sectionId: string, itemId: string) => void;
+    onSkillCategoryUpdate?: (sectionId: string, itemId: string, categoryIndex: number, field: 'name' | 'skills', value: string | string[]) => void;
     editable: boolean;
     highlightedBulletId?: string | null;
     highlightedItemId?: string | null;
 }
 
-function SectionItemRenderer({ item, sectionId, onBulletEdit, onBulletDelete, onBulletAdd, onItemDelete, editable, highlightedBulletId, highlightedItemId }: SectionItemRendererProps) {
+function SectionItemRenderer({ item, sectionId, onBulletEdit, onBulletDelete, onBulletAdd, onItemDelete, onSectionItemAdd, onSkillCategoryUpdate, editable, highlightedBulletId, highlightedItemId }: SectionItemRendererProps) {
     const content = item.content;
     const isItemHighlighted = highlightedItemId === item.id;
 
@@ -209,17 +228,17 @@ function SectionItemRenderer({ item, sectionId, onBulletEdit, onBulletDelete, on
     const renderContent = () => {
         switch (content.type) {
             case 'experience':
-                return <ExperienceEntry content={content} itemId={item.id} sectionId={sectionId} onBulletEdit={onBulletEdit} onBulletDelete={onBulletDelete} onBulletAdd={onBulletAdd} onItemDelete={onItemDelete} editable={editable} highlightedBulletId={highlightedBulletId} />;
+                return <ExperienceEntry content={content} itemId={item.id} sectionId={sectionId} onBulletEdit={onBulletEdit} onBulletDelete={onBulletDelete} onBulletAdd={onBulletAdd} onItemDelete={onItemDelete} onSectionItemAdd={onSectionItemAdd} editable={editable} highlightedBulletId={highlightedBulletId} />;
             case 'education':
-                return <EducationEntry content={content} itemId={item.id} onItemDelete={onItemDelete} sectionId={sectionId} editable={editable} />;
+                return <EducationEntry content={content} itemId={item.id} onItemDelete={onItemDelete} onSectionItemAdd={onSectionItemAdd} onBulletAdd={onBulletAdd} sectionId={sectionId} editable={editable} />;
             case 'skills':
-                return <SkillsEntry content={content} itemId={item.id} onItemDelete={onItemDelete} sectionId={sectionId} editable={editable} />;
+                return <SkillsEntry content={content} itemId={item.id} onItemDelete={onItemDelete} sectionId={sectionId} onSkillCategoryUpdate={onSkillCategoryUpdate} editable={editable} />;
             case 'summary':
                 return <SummaryEntry content={content} />;
             case 'project':
-                return <ProjectEntry content={content} itemId={item.id} sectionId={sectionId} onBulletEdit={onBulletEdit} onBulletDelete={onBulletDelete} onBulletAdd={onBulletAdd} onItemDelete={onItemDelete} editable={editable} highlightedBulletId={highlightedBulletId} />;
+                return <ProjectEntry content={content} itemId={item.id} sectionId={sectionId} onBulletEdit={onBulletEdit} onBulletDelete={onBulletDelete} onBulletAdd={onBulletAdd} onItemDelete={onItemDelete} onSectionItemAdd={onSectionItemAdd} editable={editable} highlightedBulletId={highlightedBulletId} />;
             case 'custom':
-                return <CustomEntry content={content} itemId={item.id} sectionId={sectionId} onBulletEdit={onBulletEdit} onBulletDelete={onBulletDelete} onBulletAdd={onBulletAdd} onItemDelete={onItemDelete} editable={editable} highlightedBulletId={highlightedBulletId} />;
+                return <CustomEntry content={content} itemId={item.id} sectionId={sectionId} onBulletEdit={onBulletEdit} onBulletDelete={onBulletDelete} onBulletAdd={onBulletAdd} onItemDelete={onItemDelete} onSectionItemAdd={onSectionItemAdd} editable={editable} highlightedBulletId={highlightedBulletId} />;
             default:
                 return null;
         }
@@ -237,11 +256,12 @@ interface ExperienceEntryProps {
     onBulletDelete?: (sectionId: string, itemId: string, bulletId: string) => void;
     onBulletAdd?: (sectionId: string, itemId: string) => void;
     onItemDelete?: (sectionId: string, itemId: string) => void;
+    onSectionItemAdd?: (sectionId: string) => void;
     editable: boolean;
     highlightedBulletId?: string | null;
 }
 
-function ExperienceEntry({ content, itemId, sectionId, onBulletEdit, onBulletDelete, onBulletAdd, onItemDelete, editable, highlightedBulletId }: ExperienceEntryProps) {
+function ExperienceEntry({ content, itemId, sectionId, onBulletEdit, onBulletDelete, onBulletAdd, onItemDelete, onSectionItemAdd, editable, highlightedBulletId }: ExperienceEntryProps) {
     const startDate = content.start_date || '';
     const endDate = content.end_date || 'Present';
     const dateRange = startDate ? `${startDate} — ${endDate}` : endDate;
@@ -264,7 +284,18 @@ function ExperienceEntry({ content, itemId, sectionId, onBulletEdit, onBulletDel
                 <span className={styles.entryDate}>{dateRange}</span>
             </div>
             <div className={styles.entrySubtitle}>
-                <span>{content.company}</span>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span>{content.company}</span>
+                    {editable && onBulletAdd && (
+                        <button
+                            className={styles.addSectionItemBtn}
+                            onClick={() => onBulletAdd(sectionId, itemId)}
+                            style={{ fontSize: '16px', marginLeft: '6px', verticalAlign: 'middle', border: 'none', background: 'none', cursor: 'pointer', color: '#000' }}
+                        >
+                            +
+                        </button>
+                    )}
+                </div>
                 {content.location && <span>{content.location}</span>}
             </div>
             <BulletList
@@ -287,10 +318,12 @@ interface EducationEntryProps {
     itemId: string;
     sectionId?: string;
     onItemDelete?: (sectionId: string, itemId: string) => void;
+    onSectionItemAdd?: (sectionId: string) => void;
     editable?: boolean;
+    onBulletAdd?: (sectionId: string, itemId: string) => void; // Added for consistency
 }
 
-function EducationEntry({ content, itemId, sectionId, onItemDelete, editable }: EducationEntryProps) {
+function EducationEntry({ content, itemId, sectionId, onItemDelete, onSectionItemAdd, editable, onBulletAdd }: EducationEntryProps) {
     let degreeLine = content.degree;
     if (content.field) {
         degreeLine += ` in ${content.field}`;
@@ -310,6 +343,7 @@ function EducationEntry({ content, itemId, sectionId, onItemDelete, editable }: 
                             className={styles.deleteItemBtn}
                             onClick={() => onItemDelete(sectionId, itemId)}
                             title="Delete entry"
+                            style={{ margin: 0 }}
                         >
                             🗑️
                         </button>
@@ -318,7 +352,18 @@ function EducationEntry({ content, itemId, sectionId, onItemDelete, editable }: 
                 <span className={styles.entryDate}>{dateRange}</span>
             </div>
             <div className={styles.entrySubtitle}>
-                <span>{degreeLine}</span>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span>{degreeLine}</span>
+                    {editable && onBulletAdd && sectionId && (
+                        <button
+                            className={styles.addSectionItemBtn}
+                            onClick={() => onBulletAdd(sectionId, itemId)}
+                            style={{ fontSize: '16px', marginLeft: '6px', verticalAlign: 'middle', border: 'none', background: 'none', cursor: 'pointer', color: '#000' }}
+                        >
+                            +
+                        </button>
+                    )}
+                </div>
                 {content.location && <span>{content.location}</span>}
             </div>
         </div>
@@ -331,33 +376,60 @@ interface SkillsEntryProps {
     itemId: string;
     sectionId?: string;
     onItemDelete?: (sectionId: string, itemId: string) => void;
+    onSkillCategoryUpdate?: (sectionId: string, itemId: string, categoryIndex: number, field: 'name' | 'skills', value: string | string[]) => void;
     editable?: boolean;
 }
 
-function SkillsEntry({ content, itemId, sectionId, onItemDelete, editable }: SkillsEntryProps) {
+function SkillsEntry({ content, itemId, sectionId, onItemDelete, editable, onSkillCategoryUpdate }: SkillsEntryProps) {
     const categories = content.categories || [];
+
+    const handleNameBlur = (catIndex: number) => (e: React.FocusEvent<HTMLElement>) => {
+        if (onSkillCategoryUpdate && e.target.textContent !== null) {
+            onSkillCategoryUpdate(sectionId || '', itemId, catIndex, 'name', e.target.textContent);
+        }
+    };
+
+    const handleSkillsBlur = (catIndex: number) => (e: React.FocusEvent<HTMLElement>) => {
+        if (onSkillCategoryUpdate && e.target.textContent !== null) {
+            const skills = e.target.textContent.split(',').map(s => s.trim()).filter(Boolean);
+            onSkillCategoryUpdate(sectionId || '', itemId, catIndex, 'skills', skills);
+        }
+    };
+
     return (
         <div className={styles.skillsList}>
             {categories.map((cat, i) => (
                 <div key={i} className={styles.skillsItem}>
+                    {/* Category Name - Bold and Inline */}
                     <span className={styles.skillCategory}>
-                        {cat.name}:
-                        {i === 0 && editable && onItemDelete && sectionId && (
-                            <button
-                                className={styles.deleteItemBtn}
-                                onClick={() => onItemDelete(sectionId, itemId)}
-                                title="Delete entry"
-                            >
-                                🗑️
-                            </button>
-                        )}
+                        <strong
+                            contentEditable={editable}
+                            suppressContentEditableWarning
+                            onBlur={handleNameBlur(i)}
+                        >{cat.name}: </strong>
                     </span>
-                    <span className={styles.skillsText}>{cat.skills.map((s, idx) => (
-                        <span key={idx}>
-                            {renderWithMarkdown(s)}
-                            {idx < cat.skills.length - 1 ? ', ' : ''}
-                        </span>
-                    ))}</span>
+
+                    {/* Skills List - Inline */}
+                    <span
+                        className={styles.skillsText}
+                        contentEditable={editable}
+                        suppressContentEditableWarning
+                        onBlur={handleSkillsBlur(i)}
+                    >
+                        {cat.skills.join(', ')}
+                    </span>
+
+                    {/* Delete Button (only on first category for now or we need finer grain control) */}
+                    {i === 0 && editable && onItemDelete && sectionId && (
+                        <button
+                            className={styles.deleteItemBtn}
+                            onClick={() => onItemDelete(sectionId, itemId)}
+                            title="Delete entry"
+                            style={{ marginLeft: '8px', verticalAlign: 'text-bottom' }}
+                        >
+                            🗑️
+                        </button>
+                    )}
                 </div>
             ))}
         </div>
@@ -382,11 +454,12 @@ interface ProjectEntryProps {
     onBulletDelete?: (sectionId: string, itemId: string, bulletId: string) => void;
     onBulletAdd?: (sectionId: string, itemId: string) => void;
     onItemDelete?: (sectionId: string, itemId: string) => void;
+    onSectionItemAdd?: (sectionId: string) => void;
     editable: boolean;
     highlightedBulletId?: string | null;
 }
 
-function ProjectEntry({ content, itemId, sectionId, onBulletEdit, onBulletDelete, onBulletAdd, onItemDelete, editable, highlightedBulletId }: ProjectEntryProps) {
+function ProjectEntry({ content, itemId, sectionId, onBulletEdit, onBulletDelete, onBulletAdd, onItemDelete, onSectionItemAdd, editable, highlightedBulletId }: ProjectEntryProps) {
     const techs = content.technologies || [];
 
     return (
@@ -396,13 +469,27 @@ function ProjectEntry({ content, itemId, sectionId, onBulletEdit, onBulletDelete
                     {content.name}
                     {techs.length > 0 && <span className={styles.technologies}> ({techs.join(', ')})</span>}
                     {editable && onItemDelete && (
-                        <button
-                            className={styles.deleteItemBtn}
-                            onClick={() => onItemDelete(sectionId, itemId)}
-                            title="Delete entry"
-                        >
-                            🗑️
-                        </button>
+                        <span style={{ display: 'inline-flex', gap: '4px', verticalAlign: 'middle', marginLeft: '8px' }}>
+                            {/* Project doesn't have subtitle, so keep here but change to add BULLET */}
+                            {onBulletAdd && (
+                                <button
+                                    className={styles.addSectionItemBtn}
+                                    onClick={() => onBulletAdd(sectionId, itemId)}
+                                    title="Add Bullet"
+                                    style={{ opacity: 1, fontSize: '16px' }}
+                                >
+                                    +
+                                </button>
+                            )}
+                            <button
+                                className={styles.deleteItemBtn}
+                                onClick={() => onItemDelete(sectionId, itemId)}
+                                title="Delete entry"
+                                style={{ margin: 0 }}
+                            >
+                                🗑️
+                            </button>
+                        </span>
                     )}
                 </span>
             </div>
@@ -430,25 +517,39 @@ interface CustomEntryProps {
     onBulletDelete?: (sectionId: string, itemId: string, bulletId: string) => void;
     onBulletAdd?: (sectionId: string, itemId: string) => void;
     onItemDelete?: (sectionId: string, itemId: string) => void;
+    onSectionItemAdd?: (sectionId: string) => void;
     editable: boolean;
     highlightedBulletId?: string | null;
 }
 
-function CustomEntry({ content, itemId, sectionId, onBulletEdit, onBulletDelete, onBulletAdd, onItemDelete, editable, highlightedBulletId }: CustomEntryProps) {
+function CustomEntry({ content, itemId, sectionId, onBulletEdit, onBulletDelete, onBulletAdd, onItemDelete, onSectionItemAdd, editable, highlightedBulletId }: CustomEntryProps) {
     return (
         <div className={styles.entry}>
-            {content.title && (
+            {(content.title) && (
                 <div className={styles.entryHeader}>
                     <span className={styles.entryTitle}>
                         {content.title}
                         {editable && onItemDelete && (
-                            <button
-                                className={styles.deleteItemBtn}
-                                onClick={() => onItemDelete(sectionId, itemId)}
-                                title="Delete entry"
-                            >
-                                🗑️
-                            </button>
+                            <div style={{ display: 'inline-flex', gap: '4px', verticalAlign: 'middle', marginLeft: '8px' }}>
+                                {onBulletAdd && (
+                                    <button
+                                        className={styles.addSectionItemBtn}
+                                        onClick={() => onBulletAdd(sectionId, itemId)}
+                                        title="Add Bullet"
+                                        style={{ opacity: 1, fontSize: '16px' }}
+                                    >
+                                        +
+                                    </button>
+                                )}
+                                <button
+                                    className={styles.deleteItemBtn}
+                                    onClick={() => onItemDelete(sectionId, itemId)}
+                                    title="Delete entry"
+                                    style={{ margin: 0 }}
+                                >
+                                    🗑️
+                                </button>
+                            </div>
                         )}
                     </span>
                 </div>

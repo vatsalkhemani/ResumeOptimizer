@@ -51,8 +51,10 @@ interface DocumentState {
     addSection: (section: ResumeSection) => void;
     removeSection: (sectionId: string) => void;
     removeSectionItem: (sectionId: string, itemId: string) => void;
+    addSectionItem: (sectionId: string) => void;
     reorderSections: (sectionIds: string[]) => void;
 
+    updateSkillCategory: (sectionId: string, itemId: string, categoryIndex: number, field: 'name' | 'skills', value: string | string[]) => void;
     // Suggestion actions
     applySuggestion: (suggestionId: string) => void;
     dismissSuggestion: (suggestionId: string) => void;
@@ -267,6 +269,51 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
         });
     },
 
+    updateSkillCategory: (sectionId, itemId, categoryIndex, field, value) => {
+        const resume = get().resume;
+        if (!resume) return;
+
+        const current = get().resume;
+        const updated = {
+            ...resume,
+            sections: resume.sections.map(section => {
+                if (section.id !== sectionId) return section;
+                return {
+                    ...section,
+                    items: section.items.map(item => {
+                        if (item.id !== itemId) return item;
+                        const content = item.content as any;
+                        // Basic check
+                        if (!content.categories) return item;
+
+                        const newCategories = [...content.categories];
+                        if (categoryIndex >= newCategories.length) return item;
+
+                        newCategories[categoryIndex] = {
+                            ...newCategories[categoryIndex],
+                            [field]: value
+                        };
+
+                        return {
+                            ...item,
+                            content: {
+                                ...content,
+                                categories: newCategories
+                            }
+                        };
+                    })
+                };
+            }),
+            updated_at: new Date().toISOString(),
+        };
+
+        set({
+            resume: updated,
+            history: current ? [...get().history, current] : get().history,
+            future: [],
+        });
+    },
+
     removeSectionItem: (sectionId, itemId) => {
         const resume = get().resume;
         if (!resume) return;
@@ -279,6 +326,96 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
                 return {
                     ...section,
                     items: section.items.filter(item => item.id !== itemId)
+                };
+            }),
+            updated_at: new Date().toISOString(),
+        };
+
+        set({
+            resume: updated,
+            history: current ? [...get().history, current] : get().history,
+            future: [],
+        });
+    },
+
+    addSectionItem: (sectionId: string) => {
+        const resume = get().resume;
+        if (!resume) return;
+
+        const current = get().resume;
+        const section = resume.sections.find(s => s.id === sectionId);
+        if (!section) return;
+
+        const newItemId = `item-${Date.now()}`;
+        let content: any = { type: 'custom', bullets: [] };
+
+        // Default content based on section type
+        switch (section.type) {
+            case 'experience':
+                content = {
+                    type: 'experience',
+                    company: 'Company Name',
+                    role: 'Role Title',
+                    location: 'Location',
+                    start_date: '2023',
+                    end_date: 'Present',
+                    bullets: [{ id: `bullet-${Date.now()}`, text: 'Key achievement or responsibility', order: 0 }]
+                };
+                break;
+            case 'education':
+                content = {
+                    type: 'education',
+                    institution: 'University Name',
+                    degree: 'Degree',
+                    field: 'Field of Study',
+                    end_date: '2023',
+                    bullets: []
+                };
+                break;
+            case 'projects':
+                content = {
+                    type: 'project',
+                    name: 'Project Name',
+                    description: 'Brief description of the project',
+                    technologies: ['Tech 1', 'Tech 2'],
+                    bullets: [{ id: `bullet-${Date.now()}`, text: 'Key feature or outcome', order: 0 }]
+                };
+                break;
+            case 'skills':
+                content = {
+                    type: 'skills',
+                    categories: [{ name: 'Category', skills: ['Skill 1', 'Skill 2'] }]
+                };
+                break;
+            case 'summary':
+                content = {
+                    type: 'summary',
+                    text: 'Professional summary goes here...'
+                };
+                break;
+            default:
+                content = {
+                    type: 'custom',
+                    title: 'Item Title',
+                    text: 'Description text...',
+                    bullets: []
+                };
+        }
+
+        const maxOrder = section.items.length > 0
+            ? Math.max(...section.items.map(i => i.order))
+            : -1;
+
+        const updated = {
+            ...resume,
+            sections: resume.sections.map(s => {
+                if (s.id !== sectionId) return s;
+                return {
+                    ...s,
+                    items: [
+                        ...s.items,
+                        { id: newItemId, order: maxOrder + 1, content }
+                    ]
                 };
             }),
             updated_at: new Date().toISOString(),
